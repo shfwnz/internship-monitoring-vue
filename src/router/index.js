@@ -10,9 +10,9 @@ import Register from '@/views/auth/Register.vue';
 
 // Views
 import Home from '@/views/Home.vue';
-import StudentDashboard from '@/views/StudentDashboard.vue';
-import TeacherDashboard from '@/views/TeacherDashboard.vue';
-import AdminDashboard from '@/views/AdminDashboard.vue';
+import StudentDashboard from '@/views/dashboard/StudentDashboard.vue';
+import TeacherDashboard from '@/views/dashboard/TeacherDashboard.vue';
+import AdminDashboard from '@/views/dashboard/AdminDashboard.vue';
 import Industry from '@/views/Industry.vue';
 import Profile from '@/views/Profile.vue';
 

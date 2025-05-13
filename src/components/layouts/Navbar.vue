@@ -14,11 +14,7 @@ import {
 const links = [
   {
     name: 'Dashboard',
-    path: '/app/dashboard',
-  },
-  {
-    name: 'History',
-    path: '/app/history',
+    path: '/app/student',
   },
   {
     name: 'Industry',
