@@ -1,3 +1,21 @@
+<script>
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+</script>
+
 <template>
-  <h1>Admin Dashboard</h1>
+  <Card>
+    <CardHeader>
+      <CardTitle>Card Title</CardTitle>
+      <CardDescription>Card Description</CardDescription>
+    </CardHeader>
+    <CardContent> Card Content </CardContent>
+    <CardFooter> Card Footer </CardFooter>
+  </Card>
 </template>

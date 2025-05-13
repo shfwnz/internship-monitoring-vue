@@ -26,7 +26,7 @@ const teachers = ref([
   <div class="container mx-auto py-2 flex flex-col min-h-screen">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-2 flex-grow">
       <!-- Progress Card -->
-      <Card class="col-span-1 md:col-span-3">
+      <Card class="col-span-1 md:col-span-3 bg-white">
         <CardHeader>
           <div class="flex justify-between items-center">
             <div>
@@ -171,7 +171,7 @@ const teachers = ref([
           <CardTitle class="font-semibold text-2xl">Detail Guru</CardTitle>
           <CardDescription>Informasi Guru</CardDescription>
         </CardHeader>
-        <CardContent class="p-4 bg-white flex-1">
+        <CardContent class="p-4 flex-1">
           <div v-for="teacher in teachers" :key="teacher" class="grid gap-4">
             <div
               class="flex items-center justify-between border border-amber-100 rounded-xl p-4 bg-white hover:bg-amber-50 transition-colors shadow-sm hover:shadow"
