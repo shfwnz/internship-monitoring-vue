@@ -1,9 +1,4 @@
 <script setup>
-import { ref } from 'vue';
-import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
-import { Moon, Menu, Sun } from 'lucide-vue-next';
-
-// components
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,14 +17,30 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import api from '@/api';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { toast, Toaster } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
+import { Moon, Menu, Sun } from 'lucide-vue-next';
 
+// Router
+const router = useRouter();
+
+// Make the template reusable
 const [UseTemplate, NavItem] = createReusableTemplate();
+
+// Is Desktop?
 const isDesktop = useMediaQuery('(min-width: 768px)');
+
+// Drawer
 const isDrawerOpen = ref(false);
 const isMenuDrawerOpen = ref(false);
+
+// Theme
 const isDark = ref(false);
 
 const openDrawer = () => {
@@ -62,12 +73,39 @@ const links = [
     path: '/app/industry',
   },
 ];
+
+const fetchUser = async () => {
+  try {
+    const response = await api.get('/user');
+    // localStorage.setItem('user', JSON.stringify(response.data.user));
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const logout = async () => {
+  try {
+    const response = await api.post('/logout');
+
+    if (response.data.success) {
+      localStorage.removeItem('token');
+      // localStorage.removeItem('user');
+      toast.success('Logout successful');
+      router.push('/login');
+    } else {
+      toast.error('Logout failed');
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error('Logout failed. Please try again.');
+  }
+};
 </script>
 
 <template>
   <div class="container mx-auto bg-white rounded-2xl">
     <nav class="flex py-2 px-4 items-center">
-      <!-- Tombol menu untuk mobile -->
+      <!-- Mobile Menu -->
       <div v-if="!isDesktop" class="mr-2">
         <Button variant="ghost" @click="openMenuDrawer">
           <Menu />
@@ -76,7 +114,7 @@ const links = [
 
       <!-- Logo -->
       <div class="flex items-center justify-start font-bold text-xl">
-        SimPKL
+        simPKL
       </div>
 
       <!-- Navigasi desktop -->
@@ -135,6 +173,9 @@ const links = [
               </div>
               <Switch :model-value="isDark" @update:model-value="toggleTheme" />
             </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Button variant="outline" @click="logout">Logout</Button>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -188,7 +229,7 @@ const links = [
               </div>
 
               <DrawerFooter class="pt-4 border-t">
-                <Button variant="outline">Logout</Button>
+                <Button variant="outline" @click="logout">Logout</Button>
                 <DrawerClose asChild>
                   <Button variant="ghost">Close</Button>
                 </DrawerClose>
@@ -203,9 +244,9 @@ const links = [
     <Drawer v-model:open="isMenuDrawerOpen">
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>Menu Navigasi</DrawerTitle>
-          <DrawerDescription
-            >Pilih halaman yang ingin Anda kunjungi</DrawerDescription
+          <DrawerTitle>simPKL</DrawerTitle>
+          <DrawerDescription class="capitalize"
+            >Pilih menu yang ingin anda akses</DrawerDescription
           >
         </DrawerHeader>
         <div class="p-4">

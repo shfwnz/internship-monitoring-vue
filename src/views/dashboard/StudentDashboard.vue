@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import api from '@/api';
 
 // components
@@ -14,13 +14,24 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-// Teacher data
-const teachers = ref([
-  {
-    name: 'Budi Santoso',
-    nip: '19999999999999',
-  },
-]);
+// data
+const internship = ref([]);
+const progress = ref(0);
+
+const fetchInternships = async () => {
+  try {
+    const response = await api.get('/internships');
+    internship.value = response.data.all_data;
+    console.log('Fetched internships:', internship.value);
+  } catch (error) {
+    console.error(error);
+    toast.error('Failed to fetch internships');
+  }
+};
+
+onMounted(() => {
+  fetchInternships();
+});
 </script>
 
 <template>
@@ -99,26 +110,29 @@ const teachers = ref([
           <CardDescription> Informasi Perusahaan </CardDescription>
         </CardHeader>
         <CardContent class="flex-1 p-6 bg-white">
-          <div class="space-y-4 text-sm">
+          <div
+            v-for="industry in internship"
+            :key="industry.id"
+            class="space-y-4 text-sm"
+          >
             <div class="flex flex-col">
               <span class="text-sm mb-1">Nama:</span>
-              <span class="text-gray-600">PT Maju Bersama Industries</span>
+              <span class="text-gray-600">{{ industry.name }}</span>
             </div>
             <div class="flex flex-col">
               <span class="text-sm mb-1">Bidang Usaha:</span>
-              <span class="text-gray-600">Manufacturing & Production</span>
+              <span class="text-gray-600">{{ industry.business_field }}</span>
             </div>
             <div class="flex flex-col">
               <span class="text-sm mb-1">Alamat:</span>
               <span class="text-gray-600">
-                Jl. Industri Raya No. 123, Kawasan Industri Pulogadung, Jakarta
-                Timur
+                {{ industry.address }}
               </span>
             </div>
             <div class="flex flex-col">
               <span class="text-sm mb-1">Informasi Kontak:</span>
-              <span class="text-gray-600">+62 21 4567 8910</span>
-              <span class="text-gray-600">industry@ptmajubersama.co.id</span>
+              <span class="text-gray-600">{{ industry.phone }}</span>
+              <span class="text-gray-600">{{ industry.email }}</span>
             </div>
           </div>
         </CardContent>
