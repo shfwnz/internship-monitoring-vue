@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import api from '@/api';
 
 // components
 import {
@@ -97,7 +98,7 @@ const teachers = ref([
           <CardTitle class="font-semibold text-2xl">Industri</CardTitle>
           <CardDescription> Informasi Perusahaan </CardDescription>
         </CardHeader>
-        <CardContent class="flex-1 p-4 bg-white">
+        <CardContent class="flex-1 p-6 bg-white">
           <div class="space-y-4 text-sm">
             <div class="flex flex-col">
               <span class="text-sm mb-1">Nama:</span>
@@ -135,7 +136,7 @@ const teachers = ref([
           <CardDescription>Informasi Siswa</CardDescription>
         </CardHeader>
         <CardContent
-          class="grid grid-cols-1 flex-1 sm:grid-cols-2 gap-4 p-4 bg-white"
+          class="grid grid-cols-1 flex-1 sm:grid-cols-2 gap-4 p-6 bg-white"
         >
           <div class="flex flex-col">
             <span class="text-sm mb-1">Nama Siswa</span>
@@ -154,14 +155,8 @@ const teachers = ref([
             <span class="text-gray-600">1234567890</span>
           </div>
         </CardContent>
-        <CardFooter
-          class="justify-end p-4 bg-amber-50 border-t border-amber-50"
-        >
-          <Button
-            class="bg-amber-400 hover:bg-amber-500 text-white border-none px-4 py-2 rounded-lg text-sm"
-          >
-            Lihat Semua
-          </Button>
+        <CardFooter class="justify-end p-4">
+          <Button class="bg-amber-400 hover:bg-amber-500"> Lihat Semua </Button>
         </CardFooter>
       </Card>
 
