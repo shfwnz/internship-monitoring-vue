@@ -152,7 +152,9 @@ const logout = async (isSessionExpired = false) => {
       toast.success('Logout successful');
     }
 
-    router.push('/login');
+    setTimeout(() => {
+      router.push('/login');
+    }, 100);
   } catch (err) {
     console.error('Logout error:', err);
 
@@ -162,7 +164,9 @@ const logout = async (isSessionExpired = false) => {
 
     toast.success('There was an error logging out.');
 
-    router.push('/login');
+    setTimeout(() => {
+      router.push('/login');
+    }, 100);
   }
 };
 

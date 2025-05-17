@@ -43,9 +43,7 @@ const login = async () => {
       localStorage.setItem('role', role);
 
       // Show success message
-      toast.success('Login Successful', {
-        description: 'Redirecting to dashboard...',
-      });
+      toast.success('Login Successful');
 
       if (role === 'student') {
         router.push('app/student');
@@ -124,7 +122,5 @@ const login = async () => {
         >
       </CardFooter>
     </Card>
-
-    <Toaster position="top-right" richColors />
   </div>
 </template>
