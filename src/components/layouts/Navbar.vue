@@ -89,7 +89,7 @@ const logout = async () => {
 
     if (response.data.success) {
       localStorage.removeItem('token');
-      // localStorage.removeItem('user');
+      localStorage.removeItem('user');
       toast.success('Logout successful');
       router.push('/login');
     } else {
@@ -174,7 +174,9 @@ const logout = async () => {
               <Switch :model-value="isDark" @update:model-value="toggleTheme" />
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Button variant="outline" @click="logout">Logout</Button>
+              <Button variant="outline" @click="logout" class="w-full"
+                >Logout</Button
+              >
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

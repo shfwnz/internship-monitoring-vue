@@ -36,7 +36,7 @@ const login = async () => {
     if (response.data.success) {
       // Store token in localStorage
       localStorage.setItem('token', response.data.access_token);
-      // localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('user', JSON.stringify(response.data.user));
 
       // Show success message
       toast.success('Login Successful', {
@@ -69,7 +69,7 @@ const login = async () => {
     <Card class="px-6 py-12 w-full max-w-md">
       <CardHeader class="flex flex-col items-center">
         <CardTitle class="text-2xl font-bold">Login</CardTitle>
-        <CardDescription>Welcome to PKL Request</CardDescription>
+        <CardDescription>Welcome to simPKL</CardDescription>
       </CardHeader>
       <CardContent>
         <form @submit.prevent="login">
