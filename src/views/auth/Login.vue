@@ -34,17 +34,24 @@ const login = async () => {
     });
 
     if (response.data.success) {
-      // Store token in localStorage
+      // Token in localStorage
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+
+      const userableType = response.data.user.userable_type;
+      const role = userableType.toLowerCase().split('\\').pop();
+      localStorage.setItem('role', role);
 
       // Show success message
       toast.success('Login Successful', {
         description: 'Redirecting to dashboard...',
       });
 
-      // Redirect to dashboard
-      router.push('/app/student');
+      if (role === 'student') {
+        router.push('app/student');
+      } else if (role === 'teacher') {
+        router.push('app/teacher');
+      }
     } else {
       error.value = response.data.message || 'Login failed';
       toast.error('Login Failed', {

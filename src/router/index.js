@@ -15,6 +15,7 @@ import TeacherDashboard from '@/views/dashboard/TeacherDashboard.vue';
 import AdminDashboard from '@/views/dashboard/AdminDashboard.vue';
 import Industry from '@/views/Industry.vue';
 import Profile from '@/views/Profile.vue';
+import Unauthorized from '@/views/Unauthorized.vue';
 
 const routes = [
   {
@@ -24,14 +25,25 @@ const routes = [
       { path: '', name: 'home', component: Home },
       { path: 'login', name: 'login', component: Login },
       { path: 'register', name: 'register', component: Register },
+      { path: 'unauthorized', name: 'unauthorized', component: Unauthorized },
     ],
   },
   {
     path: '/app',
     component: AppLayout,
     children: [
-      { path: 'student', name: 'student', component: StudentDashboard },
-      { path: 'teacher', name: 'teacher', component: TeacherDashboard },
+      {
+        path: 'student',
+        name: 'student',
+        component: StudentDashboard,
+        meta: { requiresAuth: true, allowedRoles: ['student'] },
+      },
+      {
+        path: 'teacher',
+        name: 'teacher',
+        component: TeacherDashboard,
+        meta: { requiresAuth: true, allowedRoles: ['teacher'] },
+      },
       { path: 'admin', name: 'admin', component: AdminDashboard },
       { path: 'industry', name: 'industry', component: Industry },
       { path: 'profile', name: 'profile', component: Profile },
@@ -42,6 +54,31 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+router.beforeEach(async (to, from, next) => {
+  const isAuthenticated = localStorage.getItem('token');
+  const userRole = localStorage.getItem('role');
+
+  // if user is not authenticated
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    return next('/login');
+  }
+
+  // if user is authenticated
+  if ((to.name === 'Login' || to.name === 'Register') && isAuthenticated) {
+    return next(userRole === 'student' ? 'app/student' : 'app/teacher');
+  }
+
+  // role guard
+  if (to.meta.allowedRoles) {
+    if (!to.meta.allowedRoles.includes(userRole)) {
+      // Redirect ke halaman sesuai role atau tampilkan 403
+      return next(userRole === 'student' ? 'app/student' : 'app/teacher');
+    }
+  }
+
+  next();
 });
 
 export default router;
