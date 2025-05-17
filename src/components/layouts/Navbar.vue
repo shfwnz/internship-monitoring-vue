@@ -4,7 +4,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 // Third party
-import { toast, Toaster } from 'vue-sonner';
+import { toast } from 'vue-sonner';
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
 import { Moon, Menu, Sun, UserCircle } from 'lucide-vue-next';
 
@@ -366,6 +366,4 @@ onMounted(() => {
       </DrawerContent>
     </Drawer>
   </div>
-
-  <Toaster position="top-right" richColors />
 </template>
