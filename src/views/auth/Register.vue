@@ -1,4 +1,18 @@
 <script setup>
+// Vue
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+
+// Third party
+import { toast, Toaster } from 'vue-sonner';
+
+// API
+import api from '@/api';
+
+// UI Components
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
@@ -7,13 +21,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import api from '@/api';
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { toast, Toaster } from 'vue-sonner';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 
 const router = useRouter();
 
@@ -27,7 +34,7 @@ const formData = ref({
 });
 
 const showRegistrationForm = ref(false);
-const isLoading = ref(false);
+const loading = ref(false);
 
 const handleRole = (role) => {
   formData.value.role = role;
@@ -44,9 +51,8 @@ const goBack = () => {
 };
 
 const handleSubmit = async () => {
+  loading.value = true;
   try {
-    isLoading.value = true;
-
     const payload = {
       role: formData.value.role,
       name: formData.value.name,
@@ -73,7 +79,7 @@ const handleSubmit = async () => {
   } catch (error) {
     toast.error(error.response?.data?.message || 'Registration failed');
   } finally {
-    isLoading.value = false;
+    loading.value = false;
   }
 };
 </script>
@@ -82,7 +88,7 @@ const handleSubmit = async () => {
   <div class="h-screen flex justify-center items-center">
     <Card
       v-if="!showRegistrationForm"
-      class="flex flex-col justify-center px-6 py-12 w-full h-full md:h-auto max-w-md"
+      class="flex flex-col justify-center px-6 py-12 w-full h-full md:h-auto max-w-md rounded-none md:rounded-3xl"
     >
       <CardHeader class="flex flex-col items-center">
         <CardTitle class="text-2xl font-bold">Who are you?</CardTitle>
@@ -108,12 +114,17 @@ const handleSubmit = async () => {
     </Card>
 
     <!-- Registration Form -->
-    <Card v-else class="w-full max-w-md">
+    <Card
+      v-else
+      class="flex flex-col justify-center px-6 py-12 w-full h-full md:h-auto max-w-md rounded-none md:rounded-3xl"
+    >
       <CardHeader class="flex flex-col items-center">
         <CardTitle class="text-2xl font-bold"
           >Register as {{ roleTitle }}</CardTitle
         >
-        <CardDescription>Enter your information below</CardDescription>
+        <CardDescription class="lowercase"
+          >Enter your information below</CardDescription
+        >
       </CardHeader>
 
       <CardContent>
@@ -175,7 +186,7 @@ const handleSubmit = async () => {
               type="button"
               class="bg-gray-300 hover:bg-gray-400 text-gray-800"
               @click="goBack"
-              :disabled="isLoading"
+              :disabled="loading"
             >
               Back
             </Button>
@@ -184,23 +195,21 @@ const handleSubmit = async () => {
               type="submit"
               class="bg-blue-400 hover:bg-blue-500"
               v-if="formData.role === 'teacher'"
-              :disabled="isLoading"
+              :disabled="loading"
             >
-              {{ isLoading ? 'Processing...' : 'Register' }}
+              {{ loading ? 'Processing...' : 'Register' }}
             </Button>
             <Button
               type="submit"
               class="bg-amber-400 hover:bg-amber-500"
               v-else
-              :disabled="isLoading"
+              :disabled="loading"
             >
-              {{ isLoading ? 'Processing...' : 'Register' }}
+              {{ loading ? 'Processing...' : 'Register' }}
             </Button>
           </div>
         </form>
       </CardContent>
     </Card>
-
-    <Toaster position="top-right" richColors />
   </div>
 </template>

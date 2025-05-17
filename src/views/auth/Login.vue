@@ -1,4 +1,18 @@
 <script setup>
+// Vue
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+
+// Third party
+import { toast, Toaster } from 'vue-sonner';
+
+// API
+import api from '@/api';
+
+// UI Components
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
@@ -7,13 +21,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import api from '@/api';
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { toast, Toaster } from 'vue-sonner';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 
 const router = useRouter();
 const error = ref('');
@@ -34,15 +41,14 @@ const login = async () => {
     });
 
     if (response.data.success) {
-      // Token in localStorage
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
+      // Set role
       const userableType = response.data.user.userable_type;
       const role = userableType.toLowerCase().split('\\').pop();
       localStorage.setItem('role', role);
 
-      // Show success message
       toast.success('Login Successful');
 
       if (role === 'student') {
@@ -71,7 +77,9 @@ const login = async () => {
 
 <template>
   <div class="h-screen flex justify-center items-center">
-    <Card class="px-6 py-12 w-full max-w-md">
+    <Card
+      class="flex flex-col justify-center px-6 py-12 w-full max-w-md h-full md:h-auto rounded-none md:rounded-xl"
+    >
       <CardHeader class="flex flex-col items-center">
         <CardTitle class="text-2xl font-bold">Login</CardTitle>
         <CardDescription>Welcome to simPKL</CardDescription>
