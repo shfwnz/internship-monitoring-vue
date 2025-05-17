@@ -18,6 +18,15 @@ import { Button } from '@/components/ui/button';
 const internship = ref([]);
 const progress = ref(0);
 
+const fetchUser = async () => {
+  try {
+    const response = await api.get('/user');
+    localStorage.setItem('user', JSON.stringify(response.data.user));
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 const fetchInternships = async () => {
   try {
     const response = await api.get('/internships');
@@ -30,6 +39,7 @@ const fetchInternships = async () => {
 };
 
 onMounted(() => {
+  fetchUser();
   fetchInternships();
 });
 </script>

@@ -1,4 +1,8 @@
 <script setup>
+import { ref, onMounted, computed } from 'vue';
+import api from '@/api';
+import { useRouter } from 'vue-router';
+import { toast } from 'vue-sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,15 +21,11 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer';
-import api from '@/api';
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { toast, Toaster } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
-import { Moon, Menu, Sun } from 'lucide-vue-next';
+import { Moon, Menu, Sun, UserCircle } from 'lucide-vue-next';
 
 // Router
 const router = useRouter();
@@ -43,6 +43,43 @@ const isMenuDrawerOpen = ref(false);
 // Theme
 const isDark = ref(false);
 
+// User data
+const currentUser = ref(null);
+const isLoading = ref(true);
+
+// Computed properties for user display
+const userInitials = computed(() => {
+  if (!currentUser.value) return 'U';
+
+  // Get first letter of first name and last name if available
+  const names = currentUser.value.name?.split(' ') || [];
+  if (names.length >= 2) {
+    return (names[0]?.[0] + names[names.length - 1]?.[0]).toUpperCase();
+  } else if (names.length === 1) {
+    return names[0]?.[0]?.toUpperCase() || 'U';
+  }
+
+  // Fallback to username or email
+  if (currentUser.value.username) {
+    return currentUser.value.username[0].toUpperCase();
+  } else if (currentUser.value.email) {
+    return currentUser.value.email[0].toUpperCase();
+  }
+
+  return 'U';
+});
+
+const userDisplayName = computed(() => {
+  if (!currentUser.value) return 'User';
+  return (
+    currentUser.value.name ||
+    currentUser.value.username ||
+    currentUser.value.email ||
+    'User'
+  );
+});
+
+// Handle drawers
 const openDrawer = () => {
   isDrawerOpen.value = true;
 };
@@ -74,32 +111,92 @@ const links = [
   },
 ];
 
+// Fetch the current logged-in user data
 const fetchUser = async () => {
+  isLoading.value = true;
+
   try {
+    // First try to get from localStorage if available
+    const cachedUser = localStorage.getItem('user');
+    if (cachedUser) {
+      currentUser.value = JSON.parse(cachedUser);
+    }
+
+    // Then make the API call to get fresh data
     const response = await api.get('/user');
-    // localStorage.setItem('user', JSON.stringify(response.data.user));
-  } catch (err) {
-    console.error(err);
-  }
-};
 
-const logout = async () => {
-  try {
-    const response = await api.post('/logout');
-
-    if (response.data.success) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      toast.success('Logout successful');
-      router.push('/login');
+    if (response.data.user) {
+      currentUser.value = response.data.user;
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      console.log('User data fetched successfully:', currentUser.value);
     } else {
-      toast.error('Logout failed');
+      console.warn('No user data returned from API');
+
+      // If no user data and no cached data, possible auth issue
+      if (!currentUser.value) {
+        handleAuthError();
+      }
     }
   } catch (err) {
-    console.error(err);
-    toast.error('Logout failed. Please try again.');
+    console.error('Error fetching user data:', err);
+    handleAuthError(err);
+  } finally {
+    isLoading.value = false;
   }
 };
+
+// Handle auth errors
+const handleAuthError = (err) => {
+  // Check for unauthorized status
+  if (err?.response?.status === 401) {
+    toast.error('Session expired. Please login again.');
+    logout(true);
+  } else {
+    // Use cached user data if available, otherwise show warning
+    if (!currentUser.value) {
+      toast.warning(
+        'Could not retrieve user information. Some features may be limited.'
+      );
+    }
+  }
+};
+
+const logout = async (isSessionExpired = false) => {
+  try {
+    // Only make API call if not already expired
+    if (!isSessionExpired) {
+      await api.post('/logout');
+    }
+
+    // Clear local storage and redirect regardless of API result
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('role');
+
+    if (!isSessionExpired) {
+      toast.success('Logout successful');
+    }
+
+    router.push('/login');
+  } catch (err) {
+    console.error('Logout error:', err);
+
+    // Still clear storage and redirect on error
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('role');
+
+    toast.error(
+      'There was an issue logging out, but you have been logged out locally.'
+    );
+    router.push('/login');
+  }
+};
+
+// Load user data on component mount
+onMounted(() => {
+  fetchUser();
+});
 </script>
 
 <template>
@@ -137,13 +234,23 @@ const logout = async () => {
 
       <!-- User profile section -->
       <div class="flex items-center justify-end gap-3 ml-auto">
+        <!-- Loading state -->
+        <div v-if="isLoading" class="animate-pulse flex items-center space-x-2">
+          <div class="w-24 h-5 bg-gray-200 rounded"></div>
+          <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
+        </div>
+
         <!-- DESKTOP (DropdownMenu) -->
-        <DropdownMenu v-if="isDesktop">
+        <DropdownMenu v-else-if="isDesktop">
           <DropdownMenuTrigger class="flex items-center space-x-2">
-            <span>User</span>
+            <span>{{ userDisplayName }}</span>
             <Avatar>
-              <AvatarImage src="https://github.com/unovue.png" alt="@unovue" />
-              <AvatarFallback>UN</AvatarFallback>
+              <AvatarImage
+                v-if="currentUser?.avatar_url"
+                :src="currentUser.avatar_url"
+                :alt="userDisplayName"
+              />
+              <AvatarFallback>{{ userInitials }}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -151,15 +258,16 @@ const logout = async () => {
               <DropdownMenuItem class="flex items-center gap-2">
                 <Avatar>
                   <AvatarImage
-                    src="https://github.com/unovue.png"
-                    alt="@unovue"
+                    v-if="currentUser?.avatar_url"
+                    :src="currentUser.avatar_url"
+                    :alt="userDisplayName"
                   />
-                  <AvatarFallback>UN</AvatarFallback>
+                  <AvatarFallback>{{ userInitials }}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p class="font-medium leading-none">Unovue</p>
+                  <p class="font-medium leading-none">{{ userDisplayName }}</p>
                   <p class="text-xs leading-none text-muted-foreground">
-                    @unovue
+                    {{ currentUser?.email || currentUser?.username || '@user' }}
                   </p>
                 </div>
               </DropdownMenuItem>
@@ -182,12 +290,16 @@ const logout = async () => {
         </DropdownMenu>
 
         <!-- MOBILE (User Drawer) -->
-        <div v-else>
+        <div v-else-if="!isLoading">
           <button class="flex items-center space-x-2" @click="openDrawer">
-            <span>User</span>
+            <span>{{ userDisplayName }}</span>
             <Avatar>
-              <AvatarImage src="https://github.com/unovue.png" alt="@unovue" />
-              <AvatarFallback>UN</AvatarFallback>
+              <AvatarImage
+                v-if="currentUser?.avatar_url"
+                :src="currentUser.avatar_url"
+                :alt="userDisplayName"
+              />
+              <AvatarFallback>{{ userInitials }}</AvatarFallback>
             </Avatar>
           </button>
 
@@ -200,15 +312,22 @@ const logout = async () => {
                     <div class="flex items-center gap-2">
                       <Avatar>
                         <AvatarImage
-                          src="https://github.com/unovue.png"
-                          alt="@unovue"
+                          v-if="currentUser?.avatar_url"
+                          :src="currentUser.avatar_url"
+                          :alt="userDisplayName"
                         />
-                        <AvatarFallback>UN</AvatarFallback>
+                        <AvatarFallback>{{ userInitials }}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p class="font-medium leading-none">Unovue</p>
+                        <p class="font-medium leading-none">
+                          {{ userDisplayName }}
+                        </p>
                         <p class="text-xs leading-none text-muted-foreground">
-                          @unovue
+                          {{
+                            currentUser?.email ||
+                            currentUser?.username ||
+                            '@user'
+                          }}
                         </p>
                       </div>
                     </div>
@@ -247,9 +366,9 @@ const logout = async () => {
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>simPKL</DrawerTitle>
-          <DrawerDescription class="capitalize"
-            >Pilih menu yang ingin anda akses</DrawerDescription
-          >
+          <DrawerDescription class="capitalize">
+            Pilih menu yang ingin anda akses
+          </DrawerDescription>
         </DrawerHeader>
         <div class="p-4">
           <ul class="space-y-2">
