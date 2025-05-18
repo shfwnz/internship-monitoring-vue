@@ -45,7 +45,12 @@ const routes = [
         meta: { requiresAuth: true, allowedRoles: ['teacher'] },
       },
       { path: 'admin', name: 'admin', component: AdminDashboard },
-      { path: 'industry', name: 'industry', component: Industry },
+      {
+        path: 'industry',
+        name: 'industry',
+        component: Industry,
+        meta: { requiresAuth: true },
+      },
       { path: 'profile', name: 'profile', component: Profile },
     ],
   },
