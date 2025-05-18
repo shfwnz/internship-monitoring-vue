@@ -4,8 +4,8 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 // Third party
+import { useMediaQuery } from '@vueuse/core';
 import { toast } from 'vue-sonner';
-import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
 import { Moon, Menu, Sun, UserCircle } from 'lucide-vue-next';
 
 // API
@@ -36,17 +36,24 @@ import {
 
 const router = useRouter();
 
-const isDesktop = useMediaQuery('(min-width: 768px)');
-
 const isDrawerOpen = ref(false);
 const isMenuDrawerOpen = ref(false);
-
 const isDark = ref(false);
-
-const currentUser = ref(null);
 const isLoading = ref(true);
+const currentUser = ref(null);
+const isDesktop = useMediaQuery('(min-width: 768px)');
 
-// Get user initials
+const links = [
+  {
+    name: 'Dashboard',
+    path: '/app/student',
+  },
+  {
+    name: 'Industry',
+    path: '/app/industry',
+  },
+];
+
 const userInitials = computed(() => {
   if (!currentUser.value) return 'U';
 
@@ -66,7 +73,6 @@ const userInitials = computed(() => {
   return 'U';
 });
 
-// Display name
 const userDisplayName = computed(() => {
   if (!currentUser.value) return 'User';
   return (
@@ -97,18 +103,6 @@ const toggleTheme = () => {
   isDark.value = !isDark.value;
 };
 
-const links = [
-  {
-    name: 'Dashboard',
-    path: '/app/student',
-  },
-  {
-    name: 'Industry',
-    path: '/app/industry',
-  },
-];
-
-// Fetch user
 const fetchUser = async () => {
   isLoading.value = true;
 
@@ -119,7 +113,6 @@ const fetchUser = async () => {
     }
 
     const token = localStorage.getItem('token');
-
     const headers = {
       Authorization: `Bearer ${token}`,
     };
@@ -137,7 +130,6 @@ const fetchUser = async () => {
   }
 };
 
-// Logout
 const logout = async (isSessionExpired = false) => {
   try {
     if (!isSessionExpired) {

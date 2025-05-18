@@ -1,15 +1,19 @@
 <script setup>
+// Vue core
 import { ref, computed, onMounted, watch } from 'vue';
-import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
+
+// API
 import api from '@/api';
 
-// Base components
-import { Button } from '../components/ui/button';
+// Third-party
+import { toast } from 'vue-sonner';
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
+
+// UI Components
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { toast, Toaster } from 'vue-sonner';
-
 import {
   Card,
   CardContent,
@@ -17,11 +21,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '../components/ui/card';
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -56,6 +59,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 
+// State
 const isOpen = ref(false);
 const industryList = ref([]);
 const industryName = ref('');
@@ -65,80 +69,69 @@ const phone = ref('');
 const address = ref('');
 const searchQuery = ref('');
 
+// Responsive Template
 const [UseTemplate, GridForm] = createReusableTemplate();
 const isDesktop = useMediaQuery('(min-width: 768px)');
 
-// pagination
+// Pagination
 const currentPage = ref(1);
 const itemsPerPage = ref(5);
 
-// fetch industries
+// Fetch Data
 const fetchIndustries = async () => {
   try {
     const response = await api.get('/industries');
     industryList.value = response.data.all_data;
-    console.log('Fetched industries:', industryList.value);
   } catch (error) {
     console.error(error);
     toast.error('Failed to fetch industries');
   }
 };
 
-// Filter industries based on search query
+// Computed
 const filteredIndustries = computed(() => {
   if (!searchQuery.value) return industryList.value;
 
-  return industryList.value.filter((industry) => {
-    const query = searchQuery.value.toLowerCase();
-    return (
+  const query = searchQuery.value.toLowerCase();
+  return industryList.value.filter(
+    (industry) =>
       industry.name.toLowerCase().includes(query) ||
       industry.business_field.toLowerCase().includes(query) ||
       industry.email.toLowerCase().includes(query)
-    );
-  });
-});
-
-// Calculate total pages
-const totalPages = computed(() => {
-  return Math.max(
-    1,
-    Math.ceil(filteredIndustries.value.length / itemsPerPage.value)
   );
 });
 
-// paginated industries
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredIndustries.value.length / itemsPerPage.value))
+);
+
 const paginatedIndustries = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value;
   const end = start + itemsPerPage.value;
   return filteredIndustries.value.slice(start, end);
 });
 
-// Pagination controls
 const canPreviousPage = computed(() => currentPage.value > 1);
 const canNextPage = computed(() => currentPage.value < totalPages.value);
 
+// Pagination Controls
 const goToPage = (page) => {
   currentPage.value = page;
 };
 
 const previousPage = () => {
-  if (canPreviousPage.value) {
-    currentPage.value--;
-  }
+  if (canPreviousPage.value) currentPage.value--;
 };
 
 const nextPage = () => {
-  if (canNextPage.value) {
-    currentPage.value++;
-  }
+  if (canNextPage.value) currentPage.value++;
 };
 
-// Reset to first page when search query changes
 watch(searchQuery, () => {
   currentPage.value = 1;
 });
 
-// create industry
+// Create Industry
 const createIndustry = async () => {
   try {
     if (
@@ -159,17 +152,18 @@ const createIndustry = async () => {
       phone: phone.value,
       address: address.value,
     });
-    industryList.value.push(response.data.added_data);
+
     toast.success('Successfully added industry');
     resetForm();
     isOpen.value = false;
+
+    await fetchIndustries();
   } catch (error) {
     console.error(error);
     toast.error('Failed to add industry');
   }
 };
 
-// reset form
 const resetForm = () => {
   industryName.value = '';
   businessField.value = '';
@@ -187,7 +181,7 @@ onMounted(() => {
   <div class="container mx-auto py-2 flex flex-col min-h-screen">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-2 flex-grow">
       <!-- Industry List -->
-      <Card class="col-span-3">
+      <Card class="col-span-1 md:col-span-3">
         <CardHeader class="flex flex-col justify-center items-center">
           <CardTitle class="text-2xl capitalize">Industry List</CardTitle>
           <CardDescription class="text-sm lowercase"
@@ -204,7 +198,7 @@ onMounted(() => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead> Name </TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Business Field</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
@@ -214,7 +208,7 @@ onMounted(() => {
             <TableBody>
               <TableRow
                 v-for="industry in paginatedIndustries"
-                :key="industry.name"
+                :key="industry.id || industry.name"
               >
                 <TableCell class="font-medium">
                   {{ industry.name }}
@@ -246,61 +240,84 @@ onMounted(() => {
           </div>
 
           <!-- Pagination Controls -->
-          <Pagination v-if="totalPages > 1" class="gap-8">
-            <PaginationItem v-if="totalPages > 2">
-              <PaginationFirst
-                @click="goToPage(1)"
-                :disabled="currentPage === 1"
-              />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationPrevious
-                @click="previousPage"
-                :disabled="!canPreviousPage"
-              />
-            </PaginationItem>
+          <Pagination v-if="totalPages > 1" class="gap-2 sm:gap-4 md:gap-8">
+            <!-- Mobile -->
+            <div class="flex md:hidden gap-2">
+              <PaginationItem>
+                <PaginationPrevious
+                  @click="previousPage"
+                  :disabled="!canPreviousPage"
+                />
+              </PaginationItem>
 
-            <!-- Page Numbers -->
-            <div class="flex">
-              <template v-for="page in totalPages" :key="page">
-                <!-- Show first page, last page, and pages around current page -->
-                <PaginationItem
-                  v-if="
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  "
+              <div class="flex items-center mx-2">
+                <span class="text-sm"
+                  >{{ currentPage }} / {{ totalPages }}</span
                 >
-                  <Button
-                    variant="outline"
-                    :class="{ 'bg-amber-100': currentPage === page }"
-                    @click="goToPage(page)"
-                  >
-                    {{ page }}
-                  </Button>
-                </PaginationItem>
+              </div>
 
-                <!-- Show ellipsis where needed -->
-                <PaginationItem
-                  v-else-if="
-                    (page === 2 && currentPage > 3) ||
-                    (page === totalPages - 1 && currentPage < totalPages - 2)
-                  "
-                >
-                  <PaginationEllipsis />
-                </PaginationItem>
-              </template>
+              <PaginationItem>
+                <PaginationNext @click="nextPage" :disabled="!canNextPage" />
+              </PaginationItem>
             </div>
 
-            <PaginationItem>
-              <PaginationNext @click="nextPage" :disabled="!canNextPage" />
-            </PaginationItem>
-            <PaginationItem v-if="totalPages > 2">
-              <PaginationLast
-                @click="goToPage(totalPages)"
-                :disabled="currentPage === totalPages"
-              />
-            </PaginationItem>
+            <!-- Desktop -->
+            <div class="hidden md:flex gap-2">
+              <PaginationItem v-if="totalPages > 2">
+                <PaginationFirst
+                  @click="goToPage(1)"
+                  :disabled="currentPage === 1"
+                />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationPrevious
+                  @click="previousPage"
+                  :disabled="!canPreviousPage"
+                />
+              </PaginationItem>
+
+              <!-- Page Numbers -->
+              <div class="flex">
+                <template v-for="page in totalPages" :key="page">
+                  <!-- Show first page, last page, and pages around current page -->
+                  <PaginationItem
+                    v-if="
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    "
+                  >
+                    <Button
+                      variant="outline"
+                      :class="{ 'bg-amber-100': currentPage === page }"
+                      @click="goToPage(page)"
+                    >
+                      {{ page }}
+                    </Button>
+                  </PaginationItem>
+
+                  <!-- Show ellipsis where needed -->
+                  <PaginationItem
+                    v-else-if="
+                      (page === 2 && currentPage > 3) ||
+                      (page === totalPages - 1 && currentPage < totalPages - 2)
+                    "
+                  >
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                </template>
+              </div>
+
+              <PaginationItem>
+                <PaginationNext @click="nextPage" :disabled="!canNextPage" />
+              </PaginationItem>
+              <PaginationItem v-if="totalPages > 2">
+                <PaginationLast
+                  @click="goToPage(totalPages)"
+                  :disabled="currentPage === totalPages"
+                />
+              </PaginationItem>
+            </div>
           </Pagination>
         </CardFooter>
       </Card>
@@ -324,7 +341,7 @@ onMounted(() => {
               class="grid items-start gap-4 px-4 w-full"
             >
               <div class="grid gap-2">
-                <Label html-for="name" class="font-medium">Industry Name</Label>
+                <Label for="name" class="font-medium">Industry Name</Label>
                 <Input
                   v-model="industryName"
                   id="name"
@@ -332,7 +349,7 @@ onMounted(() => {
                 />
               </div>
               <div class="grid gap-2">
-                <Label html-for="business_field" class="font-medium"
+                <Label for="business_field" class="font-medium"
                   >Business Field</Label
                 >
                 <Input
@@ -343,7 +360,7 @@ onMounted(() => {
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div class="grid gap-2">
-                  <Label html-for="email" class="font-medium">Email</Label>
+                  <Label for="email" class="font-medium">Email</Label>
                   <Input
                     v-model="email"
                     id="email"
@@ -352,7 +369,7 @@ onMounted(() => {
                   />
                 </div>
                 <div class="grid gap-2">
-                  <Label html-for="phone" class="font-medium">Phone</Label>
+                  <Label for="phone" class="font-medium">Phone</Label>
                   <Input
                     v-model="phone"
                     id="phone"
@@ -361,7 +378,7 @@ onMounted(() => {
                 </div>
               </div>
               <div class="grid gap-2">
-                <Label html-for="address" class="font-medium">Address</Label>
+                <Label for="address" class="font-medium">Address</Label>
                 <Input
                   v-model="address"
                   id="address"
@@ -413,6 +430,7 @@ onMounted(() => {
                 Add Industry
               </Button>
             </DrawerTrigger>
+
             <DrawerContent class="border-t-amber-400 border-t-4">
               <DrawerHeader class="text-left border-b border-amber-200 pb-4">
                 <DrawerTitle class="text-2xl">Add New Industry</DrawerTitle>
@@ -446,7 +464,6 @@ onMounted(() => {
           </Drawer>
         </CardContent>
 
-        <!-- footer -->
         <CardFooter class="border-t flex justify-between">
           <span class="text-sm">Help us improve our industry database</span>
           <span class="text-sm font-medium"
@@ -454,8 +471,6 @@ onMounted(() => {
           >
         </CardFooter>
       </Card>
-
-      <Toaster position="top-right" richColors />
     </div>
   </div>
 </template>
