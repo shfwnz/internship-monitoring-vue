@@ -75,7 +75,7 @@ const isDesktop = useMediaQuery('(min-width: 768px)');
 
 // Pagination
 const currentPage = ref(1);
-const itemsPerPage = ref(5);
+const itemsPerPage = ref(6);
 
 // Fetch Data
 const fetchIndustries = async () => {
@@ -189,7 +189,7 @@ onMounted(() => {
             convenience</CardDescription
           >
         </CardHeader>
-        <CardContent>
+        <CardContent class="flex-1 flex flex-col justify-start">
           <Input
             v-model="searchQuery"
             class="max-w-sm my-2"
@@ -231,7 +231,7 @@ onMounted(() => {
             </TableBody>
           </Table>
         </CardContent>
-        <CardFooter class="flex justify-between items-center">
+        <CardFooter class="flex flex-col items-center gap-4">
           <div class="text-sm text-gray-500">
             Showing
             <span class="font-medium">{{ paginatedIndustries.length }}</span> of
@@ -262,22 +262,26 @@ onMounted(() => {
             </div>
 
             <!-- Desktop -->
-            <div class="hidden md:flex gap-2">
-              <PaginationItem v-if="totalPages > 2">
-                <PaginationFirst
-                  @click="goToPage(1)"
-                  :disabled="currentPage === 1"
-                />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationPrevious
-                  @click="previousPage"
-                  :disabled="!canPreviousPage"
-                />
-              </PaginationItem>
+            <div
+              class="hidden md:grid md:grid-cols-4 md:gap-4 md:items-center md:w-full"
+            >
+              <div class="flex gap-12 justify-end">
+                <PaginationItem v-if="totalPages > 2">
+                  <PaginationFirst
+                    @click="goToPage(1)"
+                    :disabled="currentPage === 1"
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationPrevious
+                    @click="previousPage"
+                    :disabled="!canPreviousPage"
+                  />
+                </PaginationItem>
+              </div>
 
               <!-- Page Numbers -->
-              <div class="flex">
+              <div class="col-span-2 flex justify-center space-x-2">
                 <template v-for="page in totalPages" :key="page">
                   <!-- Show first page, last page, and pages around current page -->
                   <PaginationItem
@@ -308,15 +312,17 @@ onMounted(() => {
                 </template>
               </div>
 
-              <PaginationItem>
-                <PaginationNext @click="nextPage" :disabled="!canNextPage" />
-              </PaginationItem>
-              <PaginationItem v-if="totalPages > 2">
-                <PaginationLast
-                  @click="goToPage(totalPages)"
-                  :disabled="currentPage === totalPages"
-                />
-              </PaginationItem>
+              <div class="flex gap-12 justify-start">
+                <PaginationItem>
+                  <PaginationNext @click="nextPage" :disabled="!canNextPage" />
+                </PaginationItem>
+                <PaginationItem v-if="totalPages > 2">
+                  <PaginationLast
+                    @click="goToPage(totalPages)"
+                    :disabled="currentPage === totalPages"
+                  />
+                </PaginationItem>
+              </div>
             </div>
           </Pagination>
         </CardFooter>
