@@ -40,8 +40,8 @@ const isDrawerOpen = ref(false);
 const isMenuDrawerOpen = ref(false);
 const isDark = ref(false);
 const isLoading = ref(true);
-const currentUser = ref(null);
 const isDesktop = useMediaQuery('(min-width: 768px)');
+const currentUser = ref(null);
 
 const links = [
   {

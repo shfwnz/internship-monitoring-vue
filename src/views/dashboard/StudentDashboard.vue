@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import api from '@/api';
 
 // components
@@ -16,19 +16,29 @@ import { Button } from '@/components/ui/button';
 
 // data
 const internship = ref([]);
-const progress = ref(0);
 
-const isActive = ref(false);
+const isLoading = ref(true);
 
 const fetchInternships = async () => {
+  isLoading.value = true;
   try {
-    const response = await api.get('/internships/me');
-    internship.value = response.data.all_data;
+    const token = localStorage.getItem('token');
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    const response = await api.get('/internships/me', { headers });
+
+    if (response.data.data) {
+      internship.value = response.data.data;
+    }
 
     console.log('Fetched internships:', internship.value);
   } catch (error) {
     console.error(error);
     toast.error('Failed to fetch internships');
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -47,11 +57,9 @@ onMounted(() => {
             <div class="flex justify-between items-center">
               <div>
                 <CardTitle class="text-xl capitalize"
-                  >Progres Prakerin</CardTitle
+                  >Internship Progress</CardTitle
                 >
-                <CardDescription
-                  >Status dan penyelesaian saat ini</CardDescription
-                >
+                <CardDescription>Current status and completion</CardDescription>
               </div>
               <Badge
                 class="px-3 py-1.5 text-sm font-medium"
@@ -59,52 +67,64 @@ onMounted(() => {
                   'bg-emerald-100 text-emerald-800 border border-emerald-200',
                 ]"
               >
-                Aktif
+                Active
               </Badge>
             </div>
           </CardHeader>
           <CardContent class="space-y-4">
             <div class="flex justify-between items-center mb-2">
-              <span class="text-sm font-medium text-gray-500">Progres</span>
-              <span class="text-sm font-medium">65% selesai</span>
+              <span class="text-sm font-medium text-gray-500">Progress</span>
+              <span class="text-sm font-medium">65% completed</span>
             </div>
 
             <div class="w-full bg-gray-200 rounded-full h-2.5">
               <div
                 class="bg-amber-400 h-2.5 rounded-full"
-                style="width: 65%"
+                :style="{
+                  width: `calc(${
+                    ((new Date(internship.start_date) -
+                      new Date(internship.end_date)) /
+                      (new Date('2023-01-01') - new Date('2022-01-01'))) *
+                    100
+                  }%)`,
+                }"
               ></div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div
+              v-if="internship && internship.teacher"
+              class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"
+            >
               <div class="flex flex-col">
-                <span class="text-xs text-gray-500">Tanggal Mulai</span>
-                <span class="font-medium">12/08/2022</span>
+                <span class="text-xs text-gray-500">Start Date</span>
+                <span class="font-medium">{{ internship.start_date }}</span>
               </div>
               <div class="flex flex-col">
-                <span class="text-xs text-gray-500">Tanggal Berakhir</span>
-                <span class="font-medium">15/02/2023</span>
+                <span class="text-xs text-gray-500">End Date</span>
+                <span class="font-medium">{{ internship.end_date }}</span>
               </div>
               <div class="flex flex-col">
-                <span class="text-xs text-gray-500">Jam Selesai</span>
+                <span class="text-xs text-gray-500">Days Completed</span>
                 <span class="font-medium">320 / 500</span>
               </div>
               <div class="flex flex-col">
-                <span class="text-xs text-gray-500">Pembimbing</span>
-                <span class="font-medium">Budi Santoso</span>
+                <span class="text-xs text-gray-500">Supervisor</span>
+                <span class="font-medium">{{
+                  internship.teacher.user.name || '-'
+                }}</span>
               </div>
             </div>
           </CardContent>
           <CardFooter class="flex justify-between border-t pt-4">
             <span class="text-xs text-gray-500"
-              >Terakhir diperbarui: 12/12/2022</span
+              >Last updated: {{ new Date().toLocaleString() }}</span
             >
             <Button
               variant="ghost"
               size="sm"
               class="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
             >
-              Lihat Detail
+              View Details
             </Button>
           </CardFooter>
         </Card>
@@ -112,39 +132,46 @@ onMounted(() => {
         <!-- Industry Information -->
         <Card class="col-span-1 md:row-span-2">
           <CardHeader class="border-b">
-            <CardTitle class="font-semibold text-2xl">Industri</CardTitle>
-            <CardDescription> Informasi Perusahaan </CardDescription>
+            <CardTitle class="font-semibold text-2xl">Industry</CardTitle>
+            <CardDescription>Company Information</CardDescription>
           </CardHeader>
           <CardContent class="flex-1 p-6 bg-white">
             <div
-              v-for="industry in internship"
-              :key="industry.id"
               class="space-y-4 text-sm"
+              v-if="internship && internship.industry"
             >
               <div class="flex flex-col">
-                <span class="text-sm mb-1">Nama:</span>
-                <span class="text-gray-600">{{ industry.name }}</span>
+                <span class="text-sm mb-1">Name:</span>
+                <span class="text-gray-600">{{
+                  internship.industry.name || '-'
+                }}</span>
               </div>
               <div class="flex flex-col">
-                <span class="text-sm mb-1">Bidang Usaha:</span>
-                <span class="text-gray-600">{{ industry.business_field }}</span>
+                <span class="text-sm mb-1">Business Field:</span>
+                <span class="text-gray-600">{{
+                  internship.industry.business_field || '-'
+                }}</span>
               </div>
               <div class="flex flex-col">
-                <span class="text-sm mb-1">Alamat:</span>
+                <span class="text-sm mb-1">Address:</span>
                 <span class="text-gray-600">
-                  {{ industry.address }}
+                  {{ internship.industry.address || '-' }}
                 </span>
               </div>
               <div class="flex flex-col">
-                <span class="text-sm mb-1">Informasi Kontak:</span>
-                <span class="text-gray-600">{{ industry.phone }}</span>
-                <span class="text-gray-600">{{ industry.email }}</span>
+                <span class="text-sm mb-1">Contact Information:</span>
+                <span class="text-gray-600">{{
+                  internship.industry.phone || '-'
+                }}</span>
+                <span class="text-gray-600">{{
+                  internship.industry.email || '-'
+                }}</span>
               </div>
             </div>
           </CardContent>
           <CardFooter class="border-t justify-end">
             <Button class="bg-amber-400 hover:bg-amber-500">
-              Lihat Detail Lainnya
+              View More Details
             </Button>
           </CardFooter>
         </Card>
@@ -152,41 +179,52 @@ onMounted(() => {
         <!-- Student Details -->
         <Card class="col-span-1 md:col-span-2">
           <CardHeader class="border-b">
-            <CardTitle class="font-semibold text-2xl">Detail Siswa</CardTitle>
-            <CardDescription>Informasi Siswa</CardDescription>
+            <CardTitle class="font-semibold text-2xl"
+              >Student Details</CardTitle
+            >
+            <CardDescription>Student Information</CardDescription>
           </CardHeader>
           <CardContent
+            v-if="internship && internship.student"
             class="grid grid-cols-1 flex-1 sm:grid-cols-2 gap-4 p-6 bg-white"
           >
             <div class="flex flex-col">
-              <span class="text-sm mb-1">Nama Siswa</span>
-              <span class="text-gray-600">Budi Santoso</span>
+              <span class="text-sm mb-1">Student Name</span>
+              <span class="text-gray-600">{{
+                internship.student.user.name || 'Unknown'
+              }}</span>
             </div>
             <div class="flex flex-col">
-              <span class="text-sm mb-1">NIS</span>
-              <span class="text-gray-600">1234567890</span>
+              <span class="text-sm mb-1">Student ID</span>
+              <span class="text-gray-600">{{
+                internship.student.nis || '-'
+              }}</span>
             </div>
             <div class="flex flex-col">
               <span class="text-sm mb-1">Email</span>
-              <span class="text-gray-600">1234567890</span>
+              <span class="text-gray-600">{{
+                internship.student.user.email || '-'
+              }}</span>
             </div>
             <div class="flex flex-col">
-              <span class="text-sm mb-1">Telepon</span>
-              <span class="text-gray-600">1234567890</span>
+              <span class="text-sm mb-1">Phone</span>
+              <span class="text-gray-600">{{
+                internship.student.phone || '-'
+              }}</span>
             </div>
           </CardContent>
           <CardFooter class="justify-end p-4">
-            <Button class="bg-amber-400 hover:bg-amber-500">
-              Lihat Semua
-            </Button>
+            <Button class="bg-amber-400 hover:bg-amber-500"> View All </Button>
           </CardFooter>
         </Card>
 
         <!-- Teacher Details -->
         <Card class="col-span-1 md:col-span-1">
           <CardHeader class="border-b">
-            <CardTitle class="font-semibold text-2xl">Detail Guru</CardTitle>
-            <CardDescription>Informasi Guru</CardDescription>
+            <CardTitle class="font-semibold text-2xl"
+              >Teacher Details</CardTitle
+            >
+            <CardDescription>Teacher Information</CardDescription>
           </CardHeader>
           <CardContent class="p-4 flex-1">
             <div v-for="teacher in teachers" :key="teacher" class="grid gap-4">
@@ -212,7 +250,7 @@ onMounted(() => {
                     >
                   </div>
                   <div class="flex items-center">
-                    <span class="mr-2 text-sm">Telepon:</span>
+                    <span class="mr-2 text-sm">Phone:</span>
                     <span
                       class="text-sm text-gray-700 bg-gray-100 px-2 py-1 rounded"
                       >123456789</span
@@ -223,7 +261,7 @@ onMounted(() => {
             </div>
           </CardContent>
           <CardFooter class="justify-end">
-            <Button variant="ghost"> Hubungi Guru </Button>
+            <Button variant="ghost"> Contact Teacher </Button>
           </CardFooter>
         </Card>
       </div>
