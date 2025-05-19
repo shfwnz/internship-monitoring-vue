@@ -34,7 +34,7 @@ const formData = ref({
 });
 
 const showRegistrationForm = ref(false);
-const loading = ref(false);
+const isLoading = ref(false);
 
 const handleRole = (role) => {
   formData.value.role = role;
@@ -51,7 +51,7 @@ const goBack = () => {
 };
 
 const handleSubmit = async () => {
-  loading.value = true;
+  isLoading.value = true;
   try {
     const payload = {
       role: formData.value.role,
@@ -79,7 +79,7 @@ const handleSubmit = async () => {
   } catch (error) {
     toast.error(error.response?.data?.message || 'Registration failed');
   } finally {
-    loading.value = false;
+    isLoading.value = false;
   }
 };
 </script>
@@ -186,7 +186,7 @@ const handleSubmit = async () => {
               type="button"
               class="bg-gray-300 hover:bg-gray-400 text-gray-800"
               @click="goBack"
-              :disabled="loading"
+              :disabled="isLoading"
             >
               Back
             </Button>
@@ -195,17 +195,17 @@ const handleSubmit = async () => {
               type="submit"
               class="bg-blue-400 hover:bg-blue-500"
               v-if="formData.role === 'teacher'"
-              :disabled="loading"
+              :disabled="isLoading"
             >
-              {{ loading ? 'Processing...' : 'Register' }}
+              {{ isLoading ? 'Processing...' : 'Register' }}
             </Button>
             <Button
               type="submit"
               class="bg-amber-400 hover:bg-amber-500"
               v-else
-              :disabled="loading"
+              :disabled="isLoading"
             >
-              {{ loading ? 'Processing...' : 'Register' }}
+              {{ isLoading ? 'Processing...' : 'Register' }}
             </Button>
           </div>
         </form>

@@ -30,10 +30,10 @@ const formData = ref({
   password: '',
 });
 
-const loading = ref(false);
+const isLoading = ref(false);
 
 const login = async () => {
-  loading.value = true;
+  isLoading.value = true;
   try {
     const response = await api.post('/login', {
       email: formData.value.email,
@@ -70,7 +70,7 @@ const login = async () => {
       description: error.value,
     });
   } finally {
-    loading.value = false;
+    isLoading.value = false;
   }
 };
 </script>
@@ -116,9 +116,9 @@ const login = async () => {
               type="submit"
               variant="default"
               class="bg-amber-400 hover:bg-amber-500 mt-4 w-full"
-              :disabled="loading"
+              :disabled="isLoading"
             >
-              <span v-if="loading">Logging in...</span>
+              <span v-if="isLoading">Logging in...</span>
               <span v-else>Login</span>
             </Button>
           </div>

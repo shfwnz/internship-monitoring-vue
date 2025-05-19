@@ -20,19 +20,11 @@ const progress = ref(0);
 
 const isActive = ref(false);
 
-const fetchUser = async () => {
-  try {
-    const response = await api.get('/me');
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-  } catch (err) {
-    console.error(err);
-  }
-};
-
 const fetchInternships = async () => {
   try {
-    const response = await api.get('/internships');
+    const response = await api.get('/internships/me');
     internship.value = response.data.all_data;
+
     console.log('Fetched internships:', internship.value);
   } catch (error) {
     console.error(error);
@@ -41,7 +33,6 @@ const fetchInternships = async () => {
 };
 
 onMounted(() => {
-  // fetchUser();
   fetchInternships();
 });
 </script>
