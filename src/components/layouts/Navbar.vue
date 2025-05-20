@@ -262,7 +262,7 @@ onMounted(() => {
         <!-- MOBILE (User Drawer) -->
         <div v-else-if="!isLoading">
           <button class="flex items-center space-x-2" @click="openDrawer">
-            <span>{{ userDisplayName }}</span>
+            <span class="max-w-20 truncate">{{ userDisplayName }}</span>
             <Avatar>
               <AvatarImage
                 v-if="currentUser?.avatar_url"

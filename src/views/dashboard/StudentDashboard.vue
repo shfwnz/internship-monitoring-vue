@@ -103,6 +103,20 @@ const fetchInternships = async () => {
   }
 };
 
+const fetchIndustries = async () => {
+  isLoading.value = true;
+  try {
+    const response = await api.get('/industries');
+    industryList.value = response.data.all_data;
+    console.log('Fetched industries:', industryList.value);
+  } catch (error) {
+    console.error(error);
+    toast.error('Failed to fetch industries');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 const durationMonths = computed(() => {
   const startDate = new Date(internship.value.start_date);
   const endDate = new Date(internship.value.end_date);
@@ -136,6 +150,7 @@ const progressPercentage = computed(() => {
 onMounted(() => {
   studentStatus();
   fetchInternships();
+  fetchIndustries();
 });
 </script>
 
@@ -345,7 +360,7 @@ onMounted(() => {
         <!-- Industry Information -->
         <Card v-if="isActive" class="col-span-1 md:row-span-1">
           <CardHeader>
-            <CardTitle class="font-semibold text-2xl">Industry</CardTitle>
+            <CardTitle class="font-semibold text-xl">Industry</CardTitle>
             <CardDescription>Company Information</CardDescription>
           </CardHeader>
           <CardContent class="flex-1 p-6 bg-white">
@@ -398,7 +413,7 @@ onMounted(() => {
           <CardHeader>
             <div class="flex justify-between items-center">
               <div>
-                <CardTitle class="font-semibold text-2xl"
+                <CardTitle class="font-semibold text-xl"
                   >Student Details</CardTitle
                 >
                 <CardDescription>Student Information</CardDescription>
@@ -448,7 +463,7 @@ onMounted(() => {
                     <span
                       class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
                     >
-                      {{ internship.student.phone || '-' }}
+                      {{ internship.student.user.phone || '-' }}
                     </span>
                   </div>
 
@@ -480,7 +495,7 @@ onMounted(() => {
           <CardHeader>
             <div class="flex justify-between items-center">
               <div>
-                <CardTitle class="font-semibold text-2xl"
+                <CardTitle class="font-semibold text-xl"
                   >Teacher Details</CardTitle
                 >
                 <CardDescription>Teacher Information</CardDescription>
@@ -530,7 +545,7 @@ onMounted(() => {
                     <span
                       class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
                     >
-                      {{ internship.teacher.phone || '-' }}
+                      {{ internship.teacher.user.phone || '-' }}
                     </span>
                   </div>
 
