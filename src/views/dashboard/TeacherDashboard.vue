@@ -1,3 +1,3 @@
 <template>
-  <h1>Admin Dashboard</h1>
+  <RoleGuard :allowed-roles="['teacher']">Apalah</RoleGuard>
 </template>

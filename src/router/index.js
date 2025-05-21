@@ -12,7 +12,6 @@ import Register from '@/views/auth/Register.vue';
 import Home from '@/views/Home.vue';
 import StudentDashboard from '@/views/dashboard/StudentDashboard.vue';
 import TeacherDashboard from '@/views/dashboard/TeacherDashboard.vue';
-import AdminDashboard from '@/views/dashboard/AdminDashboard.vue';
 import Industry from '@/views/Industry.vue';
 import Profile from '@/views/Profile.vue';
 import Unauthorized from '@/views/Unauthorized.vue';
@@ -44,7 +43,6 @@ const routes = [
         component: TeacherDashboard,
         meta: { requiresAuth: true, allowedRoles: ['teacher'] },
       },
-      { path: 'admin', name: 'admin', component: AdminDashboard },
       {
         path: 'industry',
         name: 'industry',
