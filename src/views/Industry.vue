@@ -93,11 +93,8 @@ const filteredIndustries = computed(() => {
   if (!searchQuery.value) return industryList.value;
 
   const query = searchQuery.value.toLowerCase();
-  return industryList.value.filter(
-    (industry) =>
-      industry.name.toLowerCase().includes(query) ||
-      industry.business_field.toLowerCase().includes(query) ||
-      industry.email.toLowerCase().includes(query)
+  return industryList.value.filter((industry) =>
+    industry.name.toLowerCase().includes(query)
   );
 });
 
@@ -126,10 +123,6 @@ const previousPage = () => {
 const nextPage = () => {
   if (canNextPage.value) currentPage.value++;
 };
-
-watch(searchQuery, () => {
-  currentPage.value = 1;
-});
 
 // Create Industry
 const createIndustry = async () => {
@@ -174,6 +167,10 @@ const resetForm = () => {
 
 onMounted(() => {
   fetchIndustries();
+});
+
+watch(searchQuery, () => {
+  currentPage.value = 1;
 });
 </script>
 
