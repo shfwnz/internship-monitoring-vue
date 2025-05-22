@@ -211,7 +211,7 @@ onMounted(() => {
         <!-- DESKTOP (DropdownMenu) -->
         <DropdownMenu v-else-if="isDesktop">
           <DropdownMenuTrigger class="flex items-center space-x-2">
-            <span>{{ userDisplayName }}</span>
+            <span class="max-w-25 truncate">{{ userDisplayName }}</span>
             <Avatar>
               <AvatarImage
                 v-if="currentUser?.avatar_url"
@@ -233,7 +233,9 @@ onMounted(() => {
                   <AvatarFallback>{{ userInitials }}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p class="font-medium leading-none">{{ userDisplayName }}</p>
+                  <p class="font-medium leading-none max-w-25 truncate">
+                    {{ userDisplayName }}
+                  </p>
                   <p
                     class="text-xs leading-none text-muted-foreground truncate"
                   >
@@ -289,7 +291,7 @@ onMounted(() => {
                         <AvatarFallback>{{ userInitials }}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p class="font-medium leading-none">
+                        <p class="font-medium leading-none max-w-20 truncate">
                           {{ userDisplayName }}
                         </p>
                         <p class="text-xs leading-none text-muted-foreground">
