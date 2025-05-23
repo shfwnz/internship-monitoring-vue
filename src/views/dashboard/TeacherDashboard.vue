@@ -37,12 +37,28 @@ const internshipList = ref([]);
 const studentList = ref([]);
 const searchQuery = ref('');
 const isLoading = ref(false);
-const isViewStudent = ref(false);
+
+const internshipMaximized = ref(false);
+const studentMaximized = ref(false);
 
 // Pagination
 const internshipCurrentPage = ref(1);
 const studentCurrentPage = ref(1);
 const itemsPerPage = ref(5);
+
+const toggleInternshipMaximize = () => {
+  internshipMaximized.value = !internshipMaximized.value;
+  if (internshipMaximized.value) {
+    studentMaximized.value = false;
+  }
+};
+
+const toggleStudentMaximize = () => {
+  studentMaximized.value = !studentMaximized.value;
+  if (studentMaximized.value) {
+    internshipMaximized.value = false;
+  }
+};
 
 const filteredInternships = computed(() => {
   if (!searchQuery.value) {
@@ -160,14 +176,23 @@ onMounted(() => {
 });
 
 watch(searchQuery, () => {
-  currentPage.value = 1;
+  internshipCurrentPage.value = 1;
+  studentCurrentPage.value = 1;
 });
 </script>
 
 <template>
   <RoleGuard :allowed-roles="['teacher']">
     <div class="container mx-auto py-2 grid grid-cols-4 gap-4">
-      <Card class="min-h-screen col-span-3">
+      <!-- Internship List -->
+      <Card
+        class="min-h-screen col-span-1 md:col-span-3"
+        :class="{
+          'md:col-span-3': internshipMaximized,
+          'md:col-span-3': !internshipMaximized && !studentMaximized,
+          'md:col-span-1': studentMaximized,
+        }"
+      >
         <CardHeader class="flex justify-between items-center">
           <div class="flex flex-col">
             <CardTitle class="text-xl capitalize"
@@ -175,7 +200,11 @@ watch(searchQuery, () => {
             >
             <CardDescription>Current status and completion</CardDescription>
           </div>
-          <Button variant="outline"><Minimize /></Button>
+          <div>
+            <Button @click="toggleInternshipMaximize" variant="outline"
+              ><Maximize v-if="!internshipMaximized" /><Minimize v-else
+            /></Button>
+          </div>
         </CardHeader>
         <CardContent class="flex-1 flex flex-col justify-start">
           <Input
@@ -298,7 +327,7 @@ watch(searchQuery, () => {
                     <Button
                       variant="outline"
                       :class="{
-                        'bg-amber-100': internshipCurrentPage === page,
+                        'bg-blue-100': internshipCurrentPage === page,
                       }"
                       @click="goToPageInternship(page)"
                     >
@@ -338,13 +367,25 @@ watch(searchQuery, () => {
         </CardFooter>
       </Card>
 
-      <Card class="min-h-screen col-span-1">
+      <!-- Student List -->
+      <Card
+        class="min-h-screen col-span-1 md:col-span-1"
+        :class="{
+          'md:col-span-3': studentMaximized,
+          'md:col-span-1': !internshipMaximized && !studentMaximized,
+          'md:col-span-1': internshipMaximized,
+        }"
+      >
         <CardHeader class="flex justify-between items-center">
           <div class="flex flex-col">
             <CardTitle class="text-xl capitalize">Student Data</CardTitle>
             <CardDescription>Current status and completion</CardDescription>
           </div>
-          <Button variant="outline"><Maximize /></Button>
+          <div>
+            <Button @click="toggleStudentMaximize" variant="outline"
+              ><Maximize v-if="!studentMaximized" /><Minimize v-else
+            /></Button>
+          </div>
         </CardHeader>
         <CardContent class="flex-1 flex flex-col justify-start">
           <Input
@@ -466,7 +507,7 @@ watch(searchQuery, () => {
                   >
                     <Button
                       variant="outline"
-                      :class="{ 'bg-amber-100': studentCurrentPage === page }"
+                      :class="{ 'bg-blue-100': studentCurrentPage === page }"
                       @click="goToPageStudent(page)"
                     >
                       {{ page }}
