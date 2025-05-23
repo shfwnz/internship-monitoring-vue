@@ -43,16 +43,34 @@ const isLoading = ref(true);
 const isDesktop = useMediaQuery('(min-width: 768px)');
 const currentUser = ref(null);
 
-const links = [
-  {
-    name: 'Dashboard',
-    path: '/app/student',
-  },
-  {
-    name: 'Industry',
-    path: '/app/industry',
-  },
-];
+const links = computed(() => {
+  const userRole = currentUser.value?.role || localStorage.getItem('role');
+
+  const allLinks = {
+    student: [
+      {
+        name: 'Dashboard',
+        path: '/app/student',
+      },
+      {
+        name: 'Industry',
+        path: '/app/industry',
+      },
+    ],
+    teacher: [
+      {
+        name: 'Dashboard',
+        path: '/app/teacher',
+      },
+      {
+        name: 'Industry',
+        path: '/app/industry',
+      },
+    ],
+  };
+
+  return allLinks[userRole] || [];
+});
 
 const userInitials = computed(() => {
   if (!currentUser.value) return 'U';
