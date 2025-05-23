@@ -40,8 +40,9 @@ const isLoading = ref(false);
 const isViewStudent = ref(false);
 
 // Pagination
-const currentPage = ref(1);
-const itemsPerPage = ref(9);
+const internshipCurrentPage = ref(1);
+const studentCurrentPage = ref(1);
+const itemsPerPage = ref(5);
 
 const filteredInternships = computed(() => {
   if (!searchQuery.value) {
@@ -67,30 +68,62 @@ const filteredStudents = computed(() => {
   );
 });
 
-const totalPages = computed(() =>
+const totalPagesInternship = computed(() =>
   Math.max(1, Math.ceil(filteredInternships.value.length / itemsPerPage.value))
 );
 
+const totalPagesStudent = computed(() =>
+  Math.max(1, Math.ceil(filteredStudents.value.length / itemsPerPage.value))
+);
+
 const paginatedInternships = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const start = (internshipCurrentPage.value - 1) * itemsPerPage.value;
   const end = start + itemsPerPage.value;
   return filteredInternships.value.slice(start, end);
 });
 
-const canPreviousPage = computed(() => currentPage.value > 1);
-const canNextPage = computed(() => currentPage.value < totalPages.value);
+const paginatedStudents = computed(() => {
+  const start = (studentCurrentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredStudents.value.slice(start, end);
+});
 
-// Pagination Controls
-const goToPage = (page) => {
-  currentPage.value = page;
+// Internship Pagination
+const canPreviousPageInternship = computed(
+  () => internshipCurrentPage.value > 1
+);
+const canNextPageInternship = computed(
+  () => internshipCurrentPage.value < totalPagesInternship.value
+);
+
+const goToPageInternship = (page) => {
+  internshipCurrentPage.value = page;
 };
 
-const previousPage = () => {
-  if (canPreviousPage.value) currentPage.value--;
+const previousPageInternship = () => {
+  if (canPreviousPageInternship.value) internshipCurrentPage.value--;
 };
 
-const nextPage = () => {
-  if (canNextPage.value) currentPage.value++;
+const nextPageInternship = () => {
+  if (canNextPageInternship.value) internshipCurrentPage.value++;
+};
+
+// Student Pagination
+const canPreviousPageStudent = computed(() => studentCurrentPage.value > 1);
+const canNextPageStudent = computed(
+  () => studentCurrentPage.value < totalPagesStudent.value
+);
+
+const goToPageStudent = (page) => {
+  studentCurrentPage.value = page;
+};
+
+const previousPageStudent = () => {
+  if (canPreviousPageStudent.value) studentCurrentPage.value--;
+};
+
+const nextPageStudent = () => {
+  if (canNextPageStudent.value) studentCurrentPage.value++;
 };
 
 const fetchInternships = async () => {
@@ -211,19 +244,23 @@ watch(searchQuery, () => {
             <div class="flex md:hidden gap-2">
               <PaginationItem>
                 <PaginationPrevious
-                  @click="previousPage"
-                  :disabled="!canPreviousPage"
+                  @click="previousPageInternship"
+                  :disabled="!canPreviousPageInternship"
                 />
               </PaginationItem>
 
               <div class="flex items-center mx-2">
                 <span class="text-sm"
-                  >{{ currentPage }} / {{ totalPages }}</span
+                  >{{ internshipCurrentPage }} /
+                  {{ totalPagesInternship }}</span
                 >
               </div>
 
               <PaginationItem>
-                <PaginationNext @click="nextPage" :disabled="!canNextPage" />
+                <PaginationNext
+                  @click="nextPageInternship"
+                  :disabled="!canNextPageInternship"
+                />
               </PaginationItem>
             </div>
 
@@ -232,35 +269,38 @@ watch(searchQuery, () => {
               class="hidden md:grid md:grid-cols-4 md:gap-4 md:items-center md:w-full"
             >
               <div class="flex gap-12 justify-end">
-                <PaginationItem v-if="totalPages > 2">
+                <PaginationItem v-if="totalPagesInternship > 2">
                   <PaginationFirst
-                    @click="goToPage(1)"
-                    :disabled="currentPage === 1"
+                    @click="goToPageInternship(1)"
+                    :disabled="internshipCurrentPage === 1"
                   />
                 </PaginationItem>
                 <PaginationItem>
                   <PaginationPrevious
-                    @click="previousPage"
-                    :disabled="!canPreviousPage"
+                    @click="previousPageInternship"
+                    :disabled="!canPreviousPageInternship"
                   />
                 </PaginationItem>
               </div>
 
               <!-- Page Numbers -->
               <div class="col-span-2 flex justify-center space-x-2">
-                <template v-for="page in totalPages" :key="page">
+                <template v-for="page in totalPagesInternship" :key="page">
                   <!-- Show first page, last page, and pages around current page -->
                   <PaginationItem
                     v-if="
                       page === 1 ||
-                      page === totalPages ||
-                      (page >= currentPage - 1 && page <= currentPage + 1)
+                      page === totalPagesInternship ||
+                      (page >= internshipCurrentPage - 1 &&
+                        page <= internshipCurrentPage + 1)
                     "
                   >
                     <Button
                       variant="outline"
-                      :class="{ 'bg-amber-100': currentPage === page }"
-                      @click="goToPage(page)"
+                      :class="{
+                        'bg-amber-100': internshipCurrentPage === page,
+                      }"
+                      @click="goToPageInternship(page)"
                     >
                       {{ page }}
                     </Button>
@@ -269,8 +309,9 @@ watch(searchQuery, () => {
                   <!-- Show ellipsis where needed -->
                   <PaginationItem
                     v-else-if="
-                      (page === 2 && currentPage > 3) ||
-                      (page === totalPages - 1 && currentPage < totalPages - 2)
+                      (page === 2 && internshipCurrentPage > 3) ||
+                      (page === totalPagesInternship - 1 &&
+                        internshipCurrentPage < totalPagesInternship - 2)
                     "
                   >
                     <PaginationEllipsis />
@@ -280,12 +321,15 @@ watch(searchQuery, () => {
 
               <div class="flex gap-12 justify-start">
                 <PaginationItem>
-                  <PaginationNext @click="nextPage" :disabled="!canNextPage" />
+                  <PaginationNext
+                    @click="nextPageInternship"
+                    :disabled="!canNextPageInternship"
+                  />
                 </PaginationItem>
-                <PaginationItem v-if="totalPages > 2">
+                <PaginationItem v-if="totalPagesInternship > 2">
                   <PaginationLast
-                    @click="goToPage(totalPages)"
-                    :disabled="currentPage === totalPages"
+                    @click="goToPageInternship(totalPagesInternship)"
+                    :disabled="internshipCurrentPage === totalPagesInternship"
                   />
                 </PaginationItem>
               </div>
@@ -326,25 +370,24 @@ watch(searchQuery, () => {
                 </TableCell>
               </TableRow>
 
-              <template v-else-if="paginatedInternships.length > 0">
+              <template v-else-if="paginatedStudents.length > 0">
                 <TableRow
-                  v-for="internship in paginatedInternships"
-                  :key="internship.id"
+                  v-for="student in paginatedStudents"
+                  :key="student.id"
                 >
                   <TableCell class="font-medium">{{
-                    internship.student.user.name || 'Unknown'
+                    student.user.name || 'Unknown'
                   }}</TableCell>
                   <TableCell>
-                    {{ internship.industry.name || 'Unknown' }}
+                    {{ student.nis || 'Unknown' }}
                   </TableCell>
-                  <TableCell>{{
-                    internship.teacher.user.name || 'Unknown'
-                  }}</TableCell>
+                  <TableCell>{{ student.user.email || 'Unknown' }}</TableCell>
+                  <TableCell>{{ student.user.phone || 'Unknown' }}</TableCell>
+                  <TableCell>{{ student.status || 'Unknown' }}</TableCell>
 
                   <TableCell class="text-right"
-                    >{{ internship.start_date || 'Unknown' }} -
-                    {{ internship.end_date || 'Unknown' }}</TableCell
-                  >
+                    >{{ student.user.address || 'Unknown' }}
+                  </TableCell>
                 </TableRow>
               </template>
 
@@ -359,10 +402,10 @@ watch(searchQuery, () => {
         <CardFooter class="flex flex-col items-center gap-4">
           <div class="text-sm text-gray-500">
             Showing
-            <span class="font-medium">{{ paginatedInternships.length }}</span>
+            <span class="font-medium">{{ paginatedStudents.length }}</span>
             of
-            <span class="font-medium">{{ filteredInternships.length }}</span>
-            internships
+            <span class="font-medium">{{ filteredStudents.length }}</span>
+            students
           </div>
 
           <!-- Pagination Controls -->
@@ -371,19 +414,22 @@ watch(searchQuery, () => {
             <div class="flex md:hidden gap-2">
               <PaginationItem>
                 <PaginationPrevious
-                  @click="previousPage"
-                  :disabled="!canPreviousPage"
+                  @click="previousPageStudent"
+                  :disabled="!canPreviousPageStudent"
                 />
               </PaginationItem>
 
               <div class="flex items-center mx-2">
                 <span class="text-sm"
-                  >{{ currentPage }} / {{ totalPages }}</span
+                  >{{ studentCurrentPage }} / {{ totalPagesStudent }}</span
                 >
               </div>
 
               <PaginationItem>
-                <PaginationNext @click="nextPage" :disabled="!canNextPage" />
+                <PaginationNext
+                  @click="nextPageStudent"
+                  :disabled="!canNextPageStudent"
+                />
               </PaginationItem>
             </div>
 
@@ -392,35 +438,36 @@ watch(searchQuery, () => {
               class="hidden md:grid md:grid-cols-4 md:gap-4 md:items-center md:w-full"
             >
               <div class="flex gap-12 justify-end">
-                <PaginationItem v-if="totalPages > 2">
+                <PaginationItem v-if="totalPagesStudent > 2">
                   <PaginationFirst
-                    @click="goToPage(1)"
-                    :disabled="currentPage === 1"
+                    @click="goToPageStudent(1)"
+                    :disabled="studentCurrentPage === 1"
                   />
                 </PaginationItem>
                 <PaginationItem>
                   <PaginationPrevious
-                    @click="previousPage"
-                    :disabled="!canPreviousPage"
+                    @click="previousPageStudent"
+                    :disabled="!canPreviousPageStudent"
                   />
                 </PaginationItem>
               </div>
 
               <!-- Page Numbers -->
               <div class="col-span-2 flex justify-center space-x-2">
-                <template v-for="page in totalPages" :key="page">
+                <template v-for="page in totalPagesStudent" :key="page">
                   <!-- Show first page, last page, and pages around current page -->
                   <PaginationItem
                     v-if="
                       page === 1 ||
-                      page === totalPages ||
-                      (page >= currentPage - 1 && page <= currentPage + 1)
+                      page === totalPagesStudent ||
+                      (page >= studentCurrentPage - 1 &&
+                        page <= studentCurrentPage + 1)
                     "
                   >
                     <Button
                       variant="outline"
-                      :class="{ 'bg-amber-100': currentPage === page }"
-                      @click="goToPage(page)"
+                      :class="{ 'bg-amber-100': studentCurrentPage === page }"
+                      @click="goToPageStudent(page)"
                     >
                       {{ page }}
                     </Button>
@@ -429,8 +476,9 @@ watch(searchQuery, () => {
                   <!-- Show ellipsis where needed -->
                   <PaginationItem
                     v-else-if="
-                      (page === 2 && currentPage > 3) ||
-                      (page === totalPages - 1 && currentPage < totalPages - 2)
+                      (page === 2 && studentCurrentPage > 3) ||
+                      (page === totalPagesStudent - 1 &&
+                        studentCurrentPage < totalPagesStudent - 2)
                     "
                   >
                     <PaginationEllipsis />
@@ -440,12 +488,15 @@ watch(searchQuery, () => {
 
               <div class="flex gap-12 justify-start">
                 <PaginationItem>
-                  <PaginationNext @click="nextPage" :disabled="!canNextPage" />
+                  <PaginationNext
+                    @click="nextPageStudent"
+                    :disabled="!canNextPageStudent"
+                  />
                 </PaginationItem>
-                <PaginationItem v-if="totalPages > 2">
+                <PaginationItem v-if="totalPagesStudent > 2">
                   <PaginationLast
-                    @click="goToPage(totalPages)"
-                    :disabled="currentPage === totalPages"
+                    @click="goToPageStudent(totalPagesStudent)"
+                    :disabled="studentCurrentPage === totalPagesStudent"
                   />
                 </PaginationItem>
               </div>
