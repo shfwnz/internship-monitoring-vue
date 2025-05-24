@@ -35,8 +35,10 @@ import {
 
 const internshipList = ref([]);
 const studentList = ref([]);
-const searchQuery = ref('');
 const isLoading = ref(false);
+
+const internshipSearchQuery = ref('');
+const studentSearchQuery = ref('');
 
 const internshipMaximized = ref(true);
 const studentMaximized = ref(false);
@@ -61,11 +63,11 @@ const toggleStudentMaximize = () => {
 };
 
 const filteredInternships = computed(() => {
-  if (!searchQuery.value) {
+  if (!internshipSearchQuery.value) {
     return internshipList.value;
   }
 
-  const query = searchQuery.value.toLowerCase();
+  const query = internshipSearchQuery.value.toLowerCase();
   return internshipList.value.filter(
     (internship) =>
       internship.student.user.name.toLowerCase().includes(query) ||
@@ -74,11 +76,11 @@ const filteredInternships = computed(() => {
 });
 
 const filteredStudents = computed(() => {
-  if (!searchQuery.value) {
+  if (!studentSearchQuery.value) {
     return studentList.value;
   }
 
-  const query = searchQuery.value.toLowerCase();
+  const query = studentSearchQuery.value.toLowerCase();
   return studentList.value.filter((student) =>
     student.user.name.toLowerCase().includes(query)
   );
@@ -175,8 +177,11 @@ onMounted(() => {
   fetchStudents();
 });
 
-watch(searchQuery, () => {
+watch(internshipSearchQuery, () => {
   internshipCurrentPage.value = 1;
+});
+
+watch(studentSearchQuery, () => {
   studentCurrentPage.value = 1;
 });
 </script>
@@ -211,7 +216,7 @@ watch(searchQuery, () => {
         </CardHeader>
         <CardContent class="flex-1 flex flex-col justify-start">
           <Input
-            v-model="searchQuery"
+            v-model="internshipSearchQuery"
             class="max-w-sm my-2"
             placeholder="Search..."
           />
@@ -395,7 +400,7 @@ watch(searchQuery, () => {
         </CardHeader>
         <CardContent class="flex-1 flex flex-col justify-start">
           <Input
-            v-model="searchQuery"
+            v-model="studentSearchQuery"
             class="max-w-sm my-2"
             placeholder="Search..."
           />
@@ -432,7 +437,7 @@ watch(searchQuery, () => {
                   <TableCell>{{ student.user.phone || 'Unknown' }}</TableCell>
                   <TableCell>{{ student.status || 'Unknown' }}</TableCell>
 
-                  <TableCell class="text-right"
+                  <TableCell class="text-right max-w-10 truncate"
                     >{{ student.user.address || 'Unknown' }}
                   </TableCell>
                 </TableRow>
