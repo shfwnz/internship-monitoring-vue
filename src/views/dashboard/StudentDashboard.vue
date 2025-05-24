@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
+import { FileText, Plus, ChevronRight, Info } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 import api from '@/api';
 
@@ -96,22 +97,20 @@ const fetchInternships = async () => {
     console.log('Fetched internships:', internship.value);
   } catch (error) {
     console.error(error);
-    error.value = 'Failed to fetch internships. Please try again later.';
-    toast.error('Failed to fetch internships');
-  } finally {
-    isLoading.value = false;
-  }
-};
 
-const fetchIndustries = async () => {
-  isLoading.value = true;
-  try {
-    const response = await api.get('/industries');
-    industryList.value = response.data.all_data;
-    console.log('Fetched industries:', industryList.value);
-  } catch (error) {
-    console.error(error);
-    toast.error('Failed to fetch industries');
+    if (error.response?.status === 404) {
+      console.log('No data - user not registered');
+      toast.warning('Not registered yet');
+    } else if (error.response?.status >= 500) {
+      error.value = 'Server error. Try again later.';
+      toast.error('Server error');
+    } else if (error.response?.status === 401) {
+      error.value = 'Session expired. Login again.';
+      toast.error('Session expired');
+    } else {
+      error.value = 'Failed to fetch data. Try again later.';
+      toast.error('Fetch failed');
+    }
   } finally {
     isLoading.value = false;
   }
@@ -150,7 +149,6 @@ const progressPercentage = computed(() => {
 onMounted(() => {
   studentStatus();
   fetchInternships();
-  fetchIndustries();
 });
 </script>
 
@@ -226,7 +224,7 @@ onMounted(() => {
           :class="isActive ? 'md:col-span-3' : 'md:col-span-4'"
         >
           <CardHeader>
-            <div class="flex justify-between items-center">
+            <div v-if="isActive" class="flex justify-between items-center">
               <div>
                 <CardTitle class="text-xl capitalize"
                   >Internship Progress</CardTitle
@@ -248,54 +246,214 @@ onMounted(() => {
 
           <CardContent
             v-if="!isActive"
-            class="space-y-4 flex-1 flex flex-col justify-center"
+            class="flex flex-1 justify-center items-center p-4 sm:p-8"
           >
-            <!-- eslint-disable-next-line -->
-            <Dialog v-if="isDesktop" v-model:open="isOpen">
-              <DialogTrigger as-child>
-                <Button class="bg-amber-300 hover:bg-amber-400 text-amber-800">
-                  Make Request
-                </Button>
-              </DialogTrigger>
-              <DialogContent class="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle class="capitalize text-2xl"
-                    >Submit an internship details</DialogTitle
-                  >
-                  <DialogDescription class="lowercase">
-                    complete the internship monitoring form
-                  </DialogDescription>
-                </DialogHeader>
-                <GridForm />
-              </DialogContent>
-            </Dialog>
+            <div class="w-full max-w-4xl mx-auto">
+              <!-- Top Section: Icon + Title (Mobile-First Layout) -->
+              <div class="relative mb-6 sm:mb-8">
+                <div
+                  class="flex flex-col items-center gap-4 sm:flex-row sm:justify-start sm:gap-6"
+                >
+                  <!-- Animated Icon Container -->
+                  <div class="relative flex-shrink-0">
+                    <div
+                      class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center shadow-lg"
+                    >
+                      <FileText
+                        class="w-10 h-10 sm:w-12 sm:h-12 text-amber-600 animate-pulse"
+                      />
+                    </div>
 
-            <!-- eslint-disable-next-line -->
-            <Drawer v-else v-model:open="isOpen">
-              <DrawerTrigger as-child>
-                <Button class="bg-amber-300 hover:bg-amber-400 text-amber-800">
-                  Make Request
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader class="text-left">
-                  <DrawerTitle class="capitalize text-2xl"
-                    >create an internship request</DrawerTitle
+                    <!-- Floating particles effect -->
+                    <div
+                      class="absolute -top-2 -right-2 w-3 h-3 sm:w-4 sm:h-4 bg-amber-300 rounded-full animate-bounce"
+                      style="animation-delay: 0.2s"
+                    ></div>
+                    <div
+                      class="absolute -bottom-1 -left-3 w-2 h-2 sm:w-3 sm:h-3 bg-amber-400 rounded-full animate-bounce"
+                      style="animation-delay: 0.4s"
+                    ></div>
+                    <div
+                      class="absolute top-3 -left-2 w-2 h-2 bg-amber-500 rounded-full animate-bounce"
+                      style="animation-delay: 0.6s"
+                    ></div>
+                  </div>
+
+                  <!-- Title and Description -->
+                  <div class="flex flex-col text-center sm:text-left flex-1">
+                    <h3
+                      class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3 leading-tight"
+                    >
+                      You haven't registered for an internship yet
+                    </h3>
+                    <p
+                      class="text-gray-600 text-sm sm:text-base leading-relaxed max-w-2xl"
+                    >
+                      Start your internship journey! Register your internship
+                      information to begin the monitoring process and connect
+                      with your industry supervisor.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Main Content Section -->
+              <div
+                class="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2 lg:items-start"
+              >
+                <!-- Left Column: Progress Steps -->
+                <div class="space-y-4 sm:space-y-6 order-2 lg:order-1">
+                  <div
+                    class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 sm:p-6 border border-amber-100"
                   >
-                  <DrawerDescription class="lowercase">
-                    Complete the PKL request form
-                  </DrawerDescription>
-                </DrawerHeader>
-                <GridForm />
-                <DrawerFooter class="pt-2">
-                  <DrawerClose as-child>
-                    <Button variant="outline"> Cancel </Button>
-                  </DrawerClose>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer>
+                    <h4
+                      class="font-semibold text-gray-700 mb-3 sm:mb-4 text-sm sm:text-base flex items-center gap-2"
+                    >
+                      <ChevronRight
+                        class="w-4 h-4 sm:w-5 sm:h-5 text-amber-600"
+                      />
+                      Next step:
+                    </h4>
+                    <div class="space-y-2 sm:space-y-3">
+                      <div
+                        class="flex items-center text-xs sm:text-sm text-gray-600 p-2 rounded-lg hover:bg-amber-100 transition-colors"
+                      >
+                        <div
+                          class="w-2 h-2 sm:w-3 sm:h-3 bg-amber-400 rounded-full mr-3 sm:mr-4 flex-shrink-0"
+                        ></div>
+                        <span class="font-medium"
+                          >Register your internship information</span
+                        >
+                      </div>
+                      <div
+                        class="flex items-center text-xs sm:text-sm text-gray-600 p-2 rounded-lg hover:bg-amber-100 transition-colors"
+                      >
+                        <div
+                          class="w-2 h-2 sm:w-3 sm:h-3 bg-amber-300 rounded-full mr-3 sm:mr-4 flex-shrink-0"
+                        ></div>
+                        <span class="font-medium"
+                          >Get a supervisor to guide you</span
+                        >
+                      </div>
+                      <div
+                        class="flex items-center text-xs sm:text-sm text-gray-600 p-2 rounded-lg hover:bg-amber-100 transition-colors"
+                      >
+                        <div
+                          class="w-2 h-2 sm:w-3 sm:h-3 bg-amber-200 rounded-full mr-3 sm:mr-4 flex-shrink-0"
+                        ></div>
+                        <span class="font-medium"
+                          >Start the monitoring process</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Help Section -->
+                  <div
+                    class="p-3 sm:p-4 bg-blue-50 rounded-xl border border-blue-100"
+                  >
+                    <div class="flex items-start gap-2 sm:gap-3">
+                      <Info
+                        class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0 mt-0.5"
+                      />
+                      <div class="text-left">
+                        <p
+                          class="text-xs sm:text-sm text-blue-700 font-semibold mb-1"
+                        >
+                          Need help?
+                        </p>
+                        <p
+                          class="text-xs sm:text-sm text-blue-600 leading-relaxed"
+                        >
+                          Contact your academic advisor or visit the student
+                          portal for guidance.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Column: Action Button -->
+                <div
+                  class="flex flex-col justify-center items-center md:space-y-3 space-y-4 order-1 lg:order-2 h-full"
+                >
+                  <!-- Desktop Dialog -->
+                  <Dialog v-if="isDesktop" v-model:open="isOpen">
+                    <DialogTrigger as-child>
+                      <Button
+                        class="relative bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-semibold py-3 sm:py-4 px-8 sm:px-10 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 border-0 text-sm sm:text-base w-full sm:w-auto"
+                      >
+                        <span
+                          class="flex items-center justify-center gap-2 sm:gap-3"
+                        >
+                          <Plus class="w-4 h-4 sm:w-5 sm:h-5" />
+                          Register Internship
+                        </span>
+                        <!-- Shine effect -->
+                        <div
+                          class="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white to-transparent opacity-0 hover:opacity-20 transform -skew-x-12 transition-all duration-700 hover:translate-x-full"
+                        ></div>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent class="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle class="text-xl"
+                          >Internship Registration</DialogTitle
+                        >
+                        <DialogDescription>
+                          Fill in the internship monitoring form
+                        </DialogDescription>
+                      </DialogHeader>
+                      <GridForm />
+                    </DialogContent>
+                  </Dialog>
+
+                  <!-- Mobile Drawer -->
+                  <Drawer v-else v-model:open="isOpen">
+                    <DrawerTrigger as-child>
+                      <Button
+                        class="relative bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform active:scale-95 transition-all duration-200 border-0 w-full text-base"
+                      >
+                        <span class="flex items-center justify-center gap-3">
+                          <Plus class="w-5 h-5" />
+                          Register Internship
+                        </span>
+                      </Button>
+                    </DrawerTrigger>
+                    <DrawerContent>
+                      <DrawerHeader class="text-left">
+                        <DrawerTitle class="text-xl"
+                          >Internship Registration</DrawerTitle
+                        >
+                        <DrawerDescription>
+                          Fill in the internship monitoring form
+                        </DrawerDescription>
+                      </DrawerHeader>
+                      <GridForm />
+                      <DrawerFooter class="pt-2">
+                        <DrawerClose as-child>
+                          <Button variant="outline">Cancel</Button>
+                        </DrawerClose>
+                      </DrawerFooter>
+                    </DrawerContent>
+                  </Drawer>
+
+                  <!-- Quick Stats or Additional Info -->
+                  <div
+                    class="text-center text-xs sm:text-sm text-gray-500 mt-2 sm:mt-4 px-2"
+                  >
+                    <p class="mb-1">
+                      Register to unlock progress tracking and supervisor
+                      guidance
+                    </p>
+                    <p>Make the most of your internship experience</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
 
+          <!-- Active Internship Card -->
           <CardContent
             v-if="isActive"
             class="space-y-4 flex-1 flex flex-col justify-center"
@@ -431,7 +589,7 @@ onMounted(() => {
           >
             <div class="grid gap-4">
               <div
-                class="border border-amber-100 rounded-xl p-4 bg-white hover:bg-amber-50 transition-colors shadow-sm hover:shadow"
+                class="border border-amber-100 rounded-xl p-4 bg-white hover:bg-amber-100 transition-colors shadow-sm hover:shadow"
               >
                 <div class="flex items-start mb-4">
                   <h3 class="font-semibold text-lg text-gray-800">
@@ -513,7 +671,7 @@ onMounted(() => {
           >
             <div class="grid gap-4">
               <div
-                class="border border-blue-100 rounded-xl p-4 bg-white hover:bg-blue-50 transition-colors shadow-sm hover:shadow"
+                class="border border-blue-100 rounded-xl p-4 bg-white hover:bg-blue-100 transition-colors shadow-sm hover:shadow"
               >
                 <div class="flex items-start mb-4">
                   <h3 class="font-semibold text-lg text-gray-800">

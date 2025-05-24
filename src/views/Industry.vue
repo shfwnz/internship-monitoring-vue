@@ -397,10 +397,7 @@ watch(searchQuery, () => {
           <!-- eslint-disable-next-line -->
           <Dialog v-if="isDesktop" v-model:open="isOpen">
             <DialogTrigger as-child>
-              <Button
-                variant="default"
-                class="bg-amber-400 hover:bg-amber-500 font-medium shadow-md transition-all duration-300 hover:shadow-lg"
-              >
+              <Button variant="default" class="bg-amber-400 hover:bg-amber-500">
                 Add Industry
               </Button>
             </DialogTrigger>
@@ -428,10 +425,7 @@ watch(searchQuery, () => {
           <!-- eslint-disable-next-line -->
           <Drawer v-else v-model:open="isOpen">
             <DrawerTrigger as-child>
-              <Button
-                variant="default"
-                class="bg-amber-400 hover:bg-amber-500 font-medium shadow-md"
-              >
+              <Button variant="default" class="bg-amber-400 hover:bg-amber-500">
                 Add Industry
               </Button>
             </DrawerTrigger>
