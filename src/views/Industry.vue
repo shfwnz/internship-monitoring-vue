@@ -217,7 +217,9 @@ watch(searchQuery, () => {
                 </TableCell>
                 <TableCell>{{ industry.email }}</TableCell>
                 <TableCell>{{ industry.phone }}</TableCell>
-                <TableCell class="text-right">{{ industry.address }}</TableCell>
+                <TableCell class="text-right max-w-40 truncate">{{
+                  industry.address
+                }}</TableCell>
               </TableRow>
               <TableRow v-if="paginatedIndustries.length === 0">
                 <TableCell colspan="5" class="text-center py-4">
