@@ -38,7 +38,7 @@ const studentList = ref([]);
 const searchQuery = ref('');
 const isLoading = ref(false);
 
-const internshipMaximized = ref(false);
+const internshipMaximized = ref(true);
 const studentMaximized = ref(false);
 
 // Pagination
@@ -186,11 +186,10 @@ watch(searchQuery, () => {
     <div class="container mx-auto py-2 grid grid-cols-4 gap-4">
       <!-- Internship List -->
       <Card
-        class="min-h-screen col-span-1 md:col-span-3"
+        class="min-h-screen"
         :class="{
-          'md:col-span-3': internshipMaximized,
-          'md:col-span-3': !internshipMaximized && !studentMaximized,
-          'md:col-span-1': studentMaximized,
+          'col-span-1 md:col-span-3': internshipMaximized,
+          'col-span-1 md:col-span-1': studentMaximized,
         }"
       >
         <CardHeader class="flex justify-between items-center">
@@ -201,9 +200,13 @@ watch(searchQuery, () => {
             <CardDescription>Current status and completion</CardDescription>
           </div>
           <div>
-            <Button @click="toggleInternshipMaximize" variant="outline"
-              ><Maximize v-if="!internshipMaximized" /><Minimize v-else
+            <Button
+              v-if="!internshipMaximized"
+              @click="toggleInternshipMaximize"
+              variant="outline"
+              ><Maximize
             /></Button>
+            <Button v-else variant="outline" disabled><Minimize /></Button>
           </div>
         </CardHeader>
         <CardContent class="flex-1 flex flex-col justify-start">
@@ -369,11 +372,10 @@ watch(searchQuery, () => {
 
       <!-- Student List -->
       <Card
-        class="min-h-screen col-span-1 md:col-span-1"
+        class="min-h-screen"
         :class="{
-          'md:col-span-3': studentMaximized,
-          'md:col-span-1': !internshipMaximized && !studentMaximized,
-          'md:col-span-1': internshipMaximized,
+          'col-span-1 md:col-span-3': studentMaximized,
+          'col-span-1 md:col-span-1': internshipMaximized,
         }"
       >
         <CardHeader class="flex justify-between items-center">
@@ -382,9 +384,13 @@ watch(searchQuery, () => {
             <CardDescription>Current status and completion</CardDescription>
           </div>
           <div>
-            <Button @click="toggleStudentMaximize" variant="outline"
-              ><Maximize v-if="!studentMaximized" /><Minimize v-else
+            <Button
+              v-if="!studentMaximized"
+              @click="toggleStudentMaximize"
+              variant="outline"
+              ><Maximize
             /></Button>
+            <Button v-else variant="outline" disabled><Minimize /></Button>
           </div>
         </CardHeader>
         <CardContent class="flex-1 flex flex-col justify-start">
