@@ -212,7 +212,7 @@ watch(searchQuery, () => {
                 </TableCell>
                 <TableCell>
                   <Badge variant="default" class="bg-amber-500">
-                    {{ industry.business_field }}
+                    {{ industry.business_field.name }}
                   </Badge>
                 </TableCell>
                 <TableCell>{{ industry.email }}</TableCell>
