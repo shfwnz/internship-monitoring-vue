@@ -58,12 +58,22 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // State
 const isOpen = ref(false);
 const industryList = ref([]);
 const industryName = ref('');
-const businessField = ref('');
+const businessFields = ref([]);
+const selectedBusinessField = ref('');
 const email = ref('');
 const phone = ref('');
 const address = ref('');
@@ -85,6 +95,16 @@ const fetchIndustries = async () => {
   } catch (error) {
     console.error(error);
     toast.error('Failed to fetch industries');
+  }
+};
+
+const fetchBusinessFields = async () => {
+  try {
+    const response = await api.get('/business-fields');
+    businessFields.value = response.data.data;
+  } catch (error) {
+    console.error(error);
+    toast.error('Failed to fetch business fields');
   }
 };
 
@@ -129,7 +149,7 @@ const createIndustry = async () => {
   try {
     if (
       !industryName.value ||
-      !businessField.value ||
+      !selectedBusinessField.value ||
       !email.value ||
       !phone.value ||
       !address.value
@@ -140,7 +160,7 @@ const createIndustry = async () => {
 
     const response = await api.post('/industries', {
       name: industryName.value,
-      business_field: businessField.value,
+      business_field_id: selectedBusinessField.value,
       email: email.value,
       phone: phone.value,
       address: address.value,
@@ -159,7 +179,7 @@ const createIndustry = async () => {
 
 const resetForm = () => {
   industryName.value = '';
-  businessField.value = '';
+  selectedBusinessField.value = '';
   email.value = '';
   phone.value = '';
   address.value = '';
@@ -167,6 +187,7 @@ const resetForm = () => {
 
 onMounted(() => {
   fetchIndustries();
+  fetchBusinessFields();
 });
 
 watch(searchQuery, () => {
@@ -357,11 +378,23 @@ watch(searchQuery, () => {
                 <Label for="business_field" class="font-medium"
                   >Business Field</Label
                 >
-                <Input
-                  v-model="businessField"
-                  id="business_field"
-                  placeholder="e.g. Manufacturing, Retail, Technology"
-                />
+                <Select v-model="selectedBusinessField" id="business_field">
+                  <SelectTrigger class="w-full">
+                    <SelectValue placeholder="Select a business field" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Business Field</SelectLabel>
+                      <SelectItem
+                        v-for="field in businessFields"
+                        :key="field.id"
+                        :value="field.id"
+                      >
+                        <SelectItemText>{{ field.name }}</SelectItemText>
+                      </SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div class="grid gap-2">
