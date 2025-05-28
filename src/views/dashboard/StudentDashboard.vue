@@ -5,7 +5,7 @@ import { FileText, Plus, ChevronRight, Info } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 import api from '@/api';
 
-// components
+// UI Components
 import {
   Card,
   CardContent,
@@ -46,26 +46,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-// data
+// Main data
 const internship = ref([]);
 const industries = ref([]);
 const student = ref([]);
-const file = ref(null);
 
-const selectedIndustry = ref('');
-const start_date = ref('');
-const end_date = ref('');
-
-const isOpen = ref(false);
-const isActive = ref(false);
-const isLoading = ref(true);
-
-// Responsive Template
-const [UseTemplate, GridForm] = createReusableTemplate();
-const isDesktop = useMediaQuery('(min-width: 768px)');
-
-const error = ref(null);
-
+// Form data
 const formData = ref({
   selectedIndustry: '',
   start_date: '',
@@ -73,22 +59,55 @@ const formData = ref({
   file: null,
 });
 
+// UI states
+const isOpen = ref(false);
+const isActive = ref(false);
+const isLoading = ref(true);
+const error = ref(null);
+
+// Responsive
+const [UseTemplate, GridForm] = createReusableTemplate();
+const isDesktop = useMediaQuery('(min-width: 768px)');
+
+// Computed properties
+const durationMonths = computed(() => {
+  const startDate = new Date(internship.value.start_date);
+  const endDate = new Date(internship.value.end_date);
+  const timeDifference = endDate.getTime() - startDate.getTime();
+  const months = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 30));
+  return `${months} months`;
+});
+
+const progressPercentage = computed(() => {
+  const currentDate = new Date();
+  const startDate = new Date(internship.value.start_date);
+  const endDate = new Date(internship.value.end_date);
+
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    return 0;
+  }
+
+  const elapsedTime = currentDate.getTime() - startDate.getTime();
+  const totalDuration = endDate.getTime() - startDate.getTime();
+
+  if (elapsedTime <= 0) return 0;
+  if (elapsedTime >= totalDuration) return 100;
+
+  return Math.floor((elapsedTime / totalDuration) * 100);
+});
+
+// API functions
 const fetchUserData = async () => {
   try {
     const token = localStorage.getItem('token');
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
-
+    const headers = { Authorization: `Bearer ${token}` };
     const response = await api.get('/me', { headers });
 
     if (response.data.data) {
       isActive.value = response.data.data.profile.status;
       student.value = response.data.data.profile;
-      console.log(student.value);
     }
   } catch (error) {
-    console.error(error);
     toast.error('Failed to fetch user data');
   }
 };
@@ -96,24 +115,17 @@ const fetchUserData = async () => {
 const fetchInternships = async () => {
   isLoading.value = true;
   error.value = null;
+
   try {
     const token = localStorage.getItem('token');
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
-
+    const headers = { Authorization: `Bearer ${token}` };
     const response = await api.get('/internships/me', { headers });
 
     if (response.data.data) {
       internship.value = response.data.data;
     }
-
-    console.log('Fetched internships:', internship.value);
   } catch (error) {
-    console.error(error);
-
     if (error.response?.status === 404) {
-      console.log('No data - user not registered');
       toast.warning('Not registered yet');
     } else if (error.response?.status >= 500) {
       error.value = 'Server error. Try again later.';
@@ -134,49 +146,8 @@ const fetchIndustries = async () => {
   try {
     const response = await api.get('/industries');
     industries.value = response.data.all_data;
-    console.log('Fetched industries:', industries.value);
   } catch (error) {
-    console.error(error);
     toast.error('Failed to fetch industries');
-  }
-};
-
-const handleFileChange = (event) => {
-  const selectedFile = event.target.files[0];
-
-  console.log('=== FILE CHANGE ===');
-  console.log('Selected file:', selectedFile);
-
-  if (selectedFile) {
-    console.log('File name:', selectedFile.name);
-    console.log('File size:', selectedFile.size);
-    console.log('File type:', selectedFile.type);
-    console.log(
-      'File size MB:',
-      (selectedFile.size / (1024 * 1024)).toFixed(2)
-    );
-
-    // Validasi file type
-    if (selectedFile.type !== 'application/pdf') {
-      toast.error('Only PDF files are allowed');
-      event.target.value = ''; // Clear input
-      formData.value.file = null;
-      return;
-    }
-
-    // Validasi file size (2MB)
-    if (selectedFile.size > 2 * 1024 * 1024) {
-      toast.error('File size must be less than 2MB');
-      event.target.value = ''; // Clear input
-      formData.value.file = null;
-      return;
-    }
-
-    formData.value.file = selectedFile;
-    console.log('File set in formData:', formData.value.file);
-  } else {
-    formData.value.file = null;
-    console.log('No file selected');
   }
 };
 
@@ -187,86 +158,28 @@ const postInternship = async () => {
   try {
     const form = new FormData();
 
-    // Debug: Log semua data sebelum dikirim
-    console.log('=== DEBUG POST INTERNSHIP ===');
-    console.log('Student ID:', student.value.id);
-    console.log('Selected Industry:', formData.value.selectedIndustry);
-    console.log('Start Date:', formData.value.start_date);
-    console.log('End Date:', formData.value.end_date);
-    console.log('File:', formData.value.file);
-    console.log('File name:', formData.value.file?.name);
-    console.log('File size:', formData.value.file?.size);
-    console.log('File type:', formData.value.file?.type);
-
-    // Append data ke FormData
+    // Append form data
     form.append('student_id', student.value.id);
-
-    // Jangan kirim teacher_id sebagai null string, skip saja jika tidak ada
-    // form.append('teacher_id', null); // <- Hapus ini
-
     form.append('industry_id', formData.value.selectedIndustry);
     form.append('start_date', formData.value.start_date);
     form.append('end_date', formData.value.end_date);
 
-    // Pastikan file ada sebelum di-append
     if (formData.value.file) {
       form.append('file', formData.value.file);
     }
 
-    // Debug: Log FormData contents
-    console.log('=== FormData Contents ===');
-    for (let [key, value] of form.entries()) {
-      console.log(key, ':', value);
-    }
-
     const token = localStorage.getItem('token');
-    console.log('Token:', token ? 'exists' : 'missing');
+    const headers = { Authorization: `Bearer ${token}` };
 
-    // PENTING: Jangan set Content-Type untuk FormData
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      // Hapus Content-Type, biarkan browser yang set otomatis
-    };
-
-    console.log('=== Sending Request ===');
     const response = await api.post('/internships', form, { headers });
 
-    console.log('=== Response ===');
-    console.log('Status:', response.status);
-    console.log('Data:', response.data);
-
     toast.success('Internship posted successfully');
-
-    // Reset form setelah sukses
-    formData.value = {
-      selectedIndustry: '',
-      start_date: '',
-      end_date: '',
-      file: null,
-    };
-
-    // Reset file input
-    const fileInput = document.getElementById('cover_letter');
-    if (fileInput) {
-      fileInput.value = '';
-    }
-
-    // Refresh data
+    resetForm();
     await fetchInternships();
-
-    // Tutup modal
     isOpen.value = false;
   } catch (err) {
-    console.error('=== ERROR ===');
-    console.error('Error object:', err);
-    console.error('Response:', err.response);
-    console.error('Response data:', err.response?.data);
-    console.error('Response status:', err.response?.status);
-    console.error('Response headers:', err.response?.headers);
-
     // Handle specific error cases
     if (err.response?.status === 422) {
-      // Validation errors
       const errors = err.response.data?.errors || {};
       let errorMessage = 'Validation failed: ';
       Object.keys(errors).forEach((key) => {
@@ -294,14 +207,37 @@ const postInternship = async () => {
   }
 };
 
-const handleSubmit = () => {
-  console.log('=== FORM SUBMIT ===');
-  console.log('Form data:', formData.value);
+// Event handlers
+const handleFileChange = (event) => {
+  const selectedFile = event.target.files[0];
 
-  // Reset previous errors
+  if (selectedFile) {
+    // Validate file type
+    if (selectedFile.type !== 'application/pdf') {
+      toast.error('Only PDF files are allowed');
+      event.target.value = '';
+      formData.value.file = null;
+      return;
+    }
+
+    // Validate file size (2MB)
+    if (selectedFile.size > 2 * 1024 * 1024) {
+      toast.error('File size must be less than 2MB');
+      event.target.value = '';
+      formData.value.file = null;
+      return;
+    }
+
+    formData.value.file = selectedFile;
+  } else {
+    formData.value.file = null;
+  }
+};
+
+const handleSubmit = () => {
   error.value = null;
 
-  // Enhanced validation
+  // Form validation
   if (!formData.value.selectedIndustry) {
     toast.error('Please select an industry');
     return;
@@ -312,16 +248,9 @@ const handleSubmit = () => {
     return;
   }
 
-  // Validate date logic
+  // Date validation
   const startDate = new Date(formData.value.start_date);
   const endDate = new Date(formData.value.end_date);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Reset time to start of day
-
-  if (startDate < today) {
-    toast.error('Start date cannot be in the past');
-    return;
-  }
 
   if (endDate <= startDate) {
     toast.error('End date must be after start date');
@@ -333,7 +262,7 @@ const handleSubmit = () => {
     return;
   }
 
-  // Final validation untuk file
+  // Final file validation
   if (formData.value.file.size > 2 * 1024 * 1024) {
     toast.error('File size must be less than 2MB');
     return;
@@ -344,40 +273,30 @@ const handleSubmit = () => {
     return;
   }
 
-  console.log('Validation passed, calling postInternship');
-  postInternship();
+  postInternship().then(() => {
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  });
 };
 
-const durationMonths = computed(() => {
-  const startDate = new Date(internship.value.start_date);
-  const endDate = new Date(internship.value.end_date);
+const resetForm = () => {
+  formData.value = {
+    selectedIndustry: '',
+    start_date: '',
+    end_date: '',
+    file: null,
+  };
+  error.value = null;
 
-  const timeDifference = endDate.getTime() - startDate.getTime();
-
-  const months = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 30));
-
-  return `${months} months`;
-});
-
-const progressPercentage = computed(() => {
-  const currentDate = new Date();
-
-  const startDate = new Date(internship.value.start_date);
-  const endDate = new Date(internship.value.end_date);
-
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    return 0;
+  // Reset file input
+  const fileInput = document.getElementById('cover_letter');
+  if (fileInput) {
+    fileInput.value = '';
   }
+};
 
-  const elapsedTime = currentDate.getTime() - startDate.getTime();
-  const totalDuration = endDate.getTime() - startDate.getTime();
-
-  if (elapsedTime <= 0) return 0;
-  if (elapsedTime >= totalDuration) return 100;
-
-  return Math.floor((elapsedTime / totalDuration) * 100);
-});
-
+// Lifecycle
 onMounted(() => {
   fetchUserData();
   fetchInternships();
@@ -429,7 +348,7 @@ onMounted(() => {
             @change="handleFileChange"
             accept=".pdf"
           />
-          <p class="text-sm text-gray-500">Format: PDF. Max: 2MB</p>
+          <p class="text-sm text-gray-500">Format: .pdf, Max: 2MB</p>
         </div>
         <Button type="submit" class="bg-amber-400 hover:bg-amber-500">
           Save changes
@@ -493,7 +412,7 @@ onMounted(() => {
             class="flex flex-1 justify-center items-center p-4 sm:p-8"
           >
             <div class="w-full max-w-4xl mx-auto">
-              <!-- Top Section: Icon + Title (Mobile-First Layout) -->
+              <!-- Top Section: Mobile-First Layout -->
               <div class="relative mb-6 sm:mb-8">
                 <div
                   class="flex flex-col items-center gap-4 sm:flex-row sm:justify-start sm:gap-6"
@@ -528,14 +447,14 @@ onMounted(() => {
                     <h3
                       class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3 leading-tight"
                     >
-                      You haven't registered for an internship yet
+                      Internship information not submitted yet
                     </h3>
                     <p
                       class="text-gray-600 text-sm sm:text-base leading-relaxed max-w-2xl"
                     >
                       Start your internship journey! Register your internship
-                      information to begin the monitoring process and connect
-                      with your industry supervisor.
+                      information to begin the monitoring process and get
+                      teacher guidance.
                     </p>
                   </div>
                 </div>
@@ -545,7 +464,7 @@ onMounted(() => {
               <div
                 class="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2 lg:items-start"
               >
-                <!-- Left Column: Progress Steps -->
+                <!-- Left Column -->
                 <div class="space-y-4 sm:space-y-6 order-2 lg:order-1">
                   <div
                     class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 sm:p-6 border border-amber-100"
@@ -576,7 +495,7 @@ onMounted(() => {
                           class="w-2 h-2 sm:w-3 sm:h-3 bg-amber-300 rounded-full mr-3 sm:mr-4 flex-shrink-0"
                         ></div>
                         <span class="font-medium"
-                          >Get a supervisor to guide you</span
+                          >Get a teacher to guide you</span
                         >
                       </div>
                       <div
@@ -592,7 +511,7 @@ onMounted(() => {
                     </div>
                   </div>
 
-                  <!-- Help Section -->
+                  <!-- Help -->
                   <div
                     class="p-3 sm:p-4 bg-blue-50 rounded-xl border border-blue-100"
                   >
@@ -609,15 +528,14 @@ onMounted(() => {
                         <p
                           class="text-xs sm:text-sm text-blue-600 leading-relaxed"
                         >
-                          Contact your academic advisor or visit the student
-                          portal for guidance.
+                          Contact admin or your teacher.
                         </p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Right Column: Action Button -->
+                <!-- Right Column -->
                 <div
                   class="flex flex-col justify-center items-center md:space-y-3 space-y-4 order-1 lg:order-2 h-full"
                 >
@@ -625,7 +543,7 @@ onMounted(() => {
                   <Dialog v-if="isDesktop" v-model:open="isOpen">
                     <DialogTrigger as-child>
                       <Button
-                        class="relative bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-semibold py-3 sm:py-4 px-8 sm:px-10 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 border-0 text-sm sm:text-base w-full sm:w-auto"
+                        class="relative bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 font-semibold py-3 sm:py-4 px-8 sm:px-10 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 border-0 text-sm sm:text-base w-full sm:w-auto"
                       >
                         <span
                           class="flex items-center justify-center gap-2 sm:gap-3"
@@ -633,10 +551,6 @@ onMounted(() => {
                           <Plus class="w-4 h-4 sm:w-5 sm:h-5" />
                           Register Internship
                         </span>
-                        <!-- Shine effect -->
-                        <div
-                          class="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white to-transparent opacity-0 hover:opacity-20 transform -skew-x-12 transition-all duration-700 hover:translate-x-full"
-                        ></div>
                       </Button>
                     </DialogTrigger>
                     <DialogContent class="sm:max-w-[425px]">
@@ -676,21 +590,24 @@ onMounted(() => {
                       <GridForm />
                       <DrawerFooter class="pt-2">
                         <DrawerClose as-child>
-                          <Button variant="outline">Cancel</Button>
+                          <Button variant="outline" @click="resetForm"
+                            >Cancel</Button
+                          >
                         </DrawerClose>
                       </DrawerFooter>
                     </DrawerContent>
                   </Drawer>
 
-                  <!-- Quick Stats or Additional Info -->
+                  <!-- Aditional Info -->
                   <div
                     class="text-center text-xs sm:text-sm text-gray-500 mt-2 sm:mt-4 px-2"
                   >
-                    <p class="mb-1">
-                      Register to unlock progress tracking and supervisor
-                      guidance
+                    <p class="mb-1 lowercase">
+                      Register to unlock progress tracking and teacher guidance
                     </p>
-                    <p>Make the most of your internship experience</p>
+                    <p class="lowercase">
+                      Make the most of your internship experience
+                    </p>
                   </div>
                 </div>
               </div>
@@ -759,6 +676,7 @@ onMounted(() => {
               variant="ghost"
               size="sm"
               class="text-amber-600 hover:text-amber-700"
+              disabled
             >
               View Details
             </Button>
@@ -807,6 +725,7 @@ onMounted(() => {
               variant="ghost"
               size="sm"
               class="text-amber-600 hover:text-amber-700"
+              disabled
             >
               View Details
             </Button>
