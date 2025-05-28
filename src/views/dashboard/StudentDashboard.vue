@@ -719,25 +719,31 @@ onMounted(() => {
             </div>
 
             <div
-              v-if="internship && internship.teacher"
+              v-if="
+                internship && (internship.start_date || internship.end_date)
+              "
               class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"
             >
               <div class="flex flex-col">
                 <span class="text-xs text-gray-500">Start Date</span>
-                <span class="font-medium">{{ internship.start_date }}</span>
+                <span class="font-medium">{{
+                  internship.start_date || '-'
+                }}</span>
               </div>
               <div class="flex flex-col">
                 <span class="text-xs text-gray-500">End Date</span>
-                <span class="font-medium">{{ internship.end_date }}</span>
+                <span class="font-medium">{{
+                  internship.end_date || '-'
+                }}</span>
               </div>
               <div class="flex flex-col">
                 <span class="text-xs text-gray-500">Duration</span>
-                <span class="font-medium">{{ durationMonths }}</span>
+                <span class="font-medium">{{ durationMonths || '-' }}</span>
               </div>
               <div class="flex flex-col">
-                <span class="text-xs text-gray-500">Supervisor</span>
+                <span class="text-xs text-gray-500">Teacher</span>
                 <span class="font-medium">{{
-                  internship.teacher.user.name || '-'
+                  internship.teacher?.user?.name || 'Not assigned'
                 }}</span>
               </div>
             </div>
@@ -766,21 +772,18 @@ onMounted(() => {
             <CardDescription>Company Information</CardDescription>
           </CardHeader>
           <CardContent class="flex-1 p-6 bg-white">
-            <div
-              class="space-y-4 text-sm"
-              v-if="internship && internship.industry"
-            >
+            <div class="space-y-4 text-sm" v-if="internship">
               <div class="flex flex-col">
                 <span class="text-sm mb-1">Name:</span>
                 <span class="text-gray-600">{{
-                  internship.industry.name || '-'
+                  internship.industry?.name || '-'
                 }}</span>
               </div>
               <div class="flex flex-col">
                 <span class="text-sm mb-1">Business Field:</span>
-                <span class="text-gray-600">{{
-                  internship.industry.business_field || '-'
-                }}</span>
+                <badge class="bg-amber-500">{{
+                  internship.industry?.business_field?.name || '-'
+                }}</badge>
               </div>
               <div class="flex flex-col">
                 <span class="text-sm mb-1">Address:</span>
@@ -827,17 +830,14 @@ onMounted(() => {
               </Badge>
             </div>
           </CardHeader>
-          <CardContent
-            class="p-4 flex-1"
-            v-if="internship && internship.student"
-          >
+          <CardContent class="p-4 flex-1" v-if="internship">
             <div class="grid gap-4">
               <div
                 class="border border-amber-100 rounded-xl p-4 bg-white hover:bg-amber-100 transition-colors shadow-sm hover:shadow"
               >
                 <div class="flex items-start mb-4">
                   <h3 class="font-semibold text-lg text-gray-800">
-                    {{ internship.student.user.name || 'Unknown' }}
+                    {{ internship.student?.user?.name || 'Unknown' }}
                   </h3>
                 </div>
 
@@ -847,7 +847,7 @@ onMounted(() => {
                     <span
                       class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
                     >
-                      {{ internship.student.nis || '-' }}
+                      {{ internship.student?.nis || '-' }}
                     </span>
                   </div>
 
@@ -856,7 +856,7 @@ onMounted(() => {
                     <span
                       class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1 truncate"
                     >
-                      {{ internship.student.user.email || '-' }}
+                      {{ internship.student?.user?.email || '-' }}
                     </span>
                   </div>
 
@@ -865,16 +865,22 @@ onMounted(() => {
                     <span
                       class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
                     >
-                      {{ internship.student.user.phone || '-' }}
+                      {{ internship.student?.user?.phone || '-' }}
                     </span>
                   </div>
 
                   <div class="flex items-center">
-                    <span class="text-gray-500 text-sm w-16">Class:</span>
+                    <span class="text-gray-500 text-sm w-16">Gender:</span>
                     <span
                       class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
                     >
-                      {{ internship.student.class || '-' }}
+                      {{
+                        internship.student?.user?.gender === 'L'
+                          ? 'Male'
+                          : internship.student?.user?.gender === 'P'
+                          ? 'Female'
+                          : '-'
+                      }}
                     </span>
                   </div>
                 </div>
@@ -886,6 +892,7 @@ onMounted(() => {
               variant="ghost"
               size="sm"
               class="text-amber-600 hover:text-amber-700"
+              disabled
             >
               View Details
             </Button>
@@ -905,21 +912,18 @@ onMounted(() => {
               <Badge
                 class="px-3 py-1.5 text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
               >
-                Supervisor
+                Teacher
               </Badge>
             </div>
           </CardHeader>
-          <CardContent
-            class="p-4 flex-1"
-            v-if="internship && internship.teacher"
-          >
+          <CardContent class="p-4 flex-1" v-if="internship">
             <div class="grid gap-4">
               <div
                 class="border border-blue-100 rounded-xl p-4 bg-white hover:bg-blue-100 transition-colors shadow-sm hover:shadow"
               >
                 <div class="flex items-start mb-4">
                   <h3 class="font-semibold text-lg text-gray-800">
-                    {{ internship.teacher.user.name || 'Unknown' }}
+                    {{ internship.teacher?.user?.name || 'Unknown' }}
                   </h3>
                 </div>
 
@@ -929,7 +933,7 @@ onMounted(() => {
                     <span
                       class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
                     >
-                      {{ internship.teacher.nip || '-' }}
+                      {{ internship.teacher?.nip || '-' }}
                     </span>
                   </div>
 
@@ -938,7 +942,7 @@ onMounted(() => {
                     <span
                       class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1 truncate"
                     >
-                      {{ internship.teacher.user.email || '-' }}
+                      {{ internship.teacher?.user?.email || '-' }}
                     </span>
                   </div>
 
@@ -947,16 +951,22 @@ onMounted(() => {
                     <span
                       class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
                     >
-                      {{ internship.teacher.user.phone || '-' }}
+                      {{ internship.teacher?.user?.phone || '-' }}
                     </span>
                   </div>
 
                   <div class="flex items-center">
-                    <span class="text-gray-500 text-sm w-16">Subject:</span>
+                    <span class="text-gray-500 text-sm w-16">Gender:</span>
                     <span
                       class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
                     >
-                      {{ internship.teacher.subject || '-' }}
+                      {{
+                        internship.teacher?.user?.gender === 'L'
+                          ? 'Male'
+                          : internship.teacher?.user?.gender === 'P'
+                          ? 'Female'
+                          : '-'
+                      }}
                     </span>
                   </div>
                 </div>
@@ -968,6 +978,7 @@ onMounted(() => {
               variant="ghost"
               size="sm"
               class="text-blue-600 hover:text-blue-700"
+              disabled
             >
               View Details
             </Button>
