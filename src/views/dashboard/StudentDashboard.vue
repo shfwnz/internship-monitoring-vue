@@ -48,6 +48,13 @@ import { Label } from '@/components/ui/label';
 
 // data
 const internship = ref([]);
+const industries = ref([]);
+const student = ref([]);
+const file = ref(null);
+
+const selectedIndustry = ref('');
+const start_date = ref('');
+const end_date = ref('');
 
 const isOpen = ref(false);
 const isActive = ref(false);
@@ -59,7 +66,14 @@ const isDesktop = useMediaQuery('(min-width: 768px)');
 
 const error = ref(null);
 
-const studentStatus = async () => {
+const formData = ref({
+  selectedIndustry: '',
+  start_date: '',
+  end_date: '',
+  file: null,
+});
+
+const fetchUserData = async () => {
   try {
     const token = localStorage.getItem('token');
     const headers = {
@@ -67,11 +81,11 @@ const studentStatus = async () => {
     };
 
     const response = await api.get('/me', { headers });
-    console.log(response.data.data.profile);
 
-    if (response.data.data.profile) {
+    if (response.data.data) {
       isActive.value = response.data.data.profile.status;
-      console.log(isActive.value);
+      student.value = response.data.data.profile;
+      console.log(student.value);
     }
   } catch (error) {
     console.error(error);
@@ -116,6 +130,224 @@ const fetchInternships = async () => {
   }
 };
 
+const fetchIndustries = async () => {
+  try {
+    const response = await api.get('/industries');
+    industries.value = response.data.all_data;
+    console.log('Fetched industries:', industries.value);
+  } catch (error) {
+    console.error(error);
+    toast.error('Failed to fetch industries');
+  }
+};
+
+const handleFileChange = (event) => {
+  const selectedFile = event.target.files[0];
+
+  console.log('=== FILE CHANGE ===');
+  console.log('Selected file:', selectedFile);
+
+  if (selectedFile) {
+    console.log('File name:', selectedFile.name);
+    console.log('File size:', selectedFile.size);
+    console.log('File type:', selectedFile.type);
+    console.log(
+      'File size MB:',
+      (selectedFile.size / (1024 * 1024)).toFixed(2)
+    );
+
+    // Validasi file type
+    if (selectedFile.type !== 'application/pdf') {
+      toast.error('Only PDF files are allowed');
+      event.target.value = ''; // Clear input
+      formData.value.file = null;
+      return;
+    }
+
+    // Validasi file size (2MB)
+    if (selectedFile.size > 2 * 1024 * 1024) {
+      toast.error('File size must be less than 2MB');
+      event.target.value = ''; // Clear input
+      formData.value.file = null;
+      return;
+    }
+
+    formData.value.file = selectedFile;
+    console.log('File set in formData:', formData.value.file);
+  } else {
+    formData.value.file = null;
+    console.log('No file selected');
+  }
+};
+
+const postInternship = async () => {
+  isLoading.value = true;
+  error.value = null;
+
+  try {
+    const form = new FormData();
+
+    // Debug: Log semua data sebelum dikirim
+    console.log('=== DEBUG POST INTERNSHIP ===');
+    console.log('Student ID:', student.value.id);
+    console.log('Selected Industry:', formData.value.selectedIndustry);
+    console.log('Start Date:', formData.value.start_date);
+    console.log('End Date:', formData.value.end_date);
+    console.log('File:', formData.value.file);
+    console.log('File name:', formData.value.file?.name);
+    console.log('File size:', formData.value.file?.size);
+    console.log('File type:', formData.value.file?.type);
+
+    // Append data ke FormData
+    form.append('student_id', student.value.id);
+
+    // Jangan kirim teacher_id sebagai null string, skip saja jika tidak ada
+    // form.append('teacher_id', null); // <- Hapus ini
+
+    form.append('industry_id', formData.value.selectedIndustry);
+    form.append('start_date', formData.value.start_date);
+    form.append('end_date', formData.value.end_date);
+
+    // Pastikan file ada sebelum di-append
+    if (formData.value.file) {
+      form.append('file', formData.value.file);
+    }
+
+    // Debug: Log FormData contents
+    console.log('=== FormData Contents ===');
+    for (let [key, value] of form.entries()) {
+      console.log(key, ':', value);
+    }
+
+    const token = localStorage.getItem('token');
+    console.log('Token:', token ? 'exists' : 'missing');
+
+    // PENTING: Jangan set Content-Type untuk FormData
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      // Hapus Content-Type, biarkan browser yang set otomatis
+    };
+
+    console.log('=== Sending Request ===');
+    const response = await api.post('/internships', form, { headers });
+
+    console.log('=== Response ===');
+    console.log('Status:', response.status);
+    console.log('Data:', response.data);
+
+    toast.success('Internship posted successfully');
+
+    // Reset form setelah sukses
+    formData.value = {
+      selectedIndustry: '',
+      start_date: '',
+      end_date: '',
+      file: null,
+    };
+
+    // Reset file input
+    const fileInput = document.getElementById('cover_letter');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+
+    // Refresh data
+    await fetchInternships();
+
+    // Tutup modal
+    isOpen.value = false;
+  } catch (err) {
+    console.error('=== ERROR ===');
+    console.error('Error object:', err);
+    console.error('Response:', err.response);
+    console.error('Response data:', err.response?.data);
+    console.error('Response status:', err.response?.status);
+    console.error('Response headers:', err.response?.headers);
+
+    // Handle specific error cases
+    if (err.response?.status === 422) {
+      // Validation errors
+      const errors = err.response.data?.errors || {};
+      let errorMessage = 'Validation failed: ';
+      Object.keys(errors).forEach((key) => {
+        errorMessage += `${key}: ${errors[key].join(', ')}. `;
+      });
+      error.value = errorMessage;
+      toast.error(errorMessage);
+    } else if (err.response?.status === 401) {
+      error.value = 'Unauthorized. Please login again.';
+      toast.error('Session expired. Please login again.');
+    } else if (err.response?.status === 413) {
+      error.value = 'File too large. Maximum size is 2MB.';
+      toast.error('File too large');
+    } else if (err.response?.status >= 500) {
+      error.value = 'Server error. Please try again later.';
+      toast.error('Server error');
+    } else {
+      error.value =
+        err.response?.data?.message ||
+        'Failed to post internship. Please try again.';
+      toast.error(error.value);
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const handleSubmit = () => {
+  console.log('=== FORM SUBMIT ===');
+  console.log('Form data:', formData.value);
+
+  // Reset previous errors
+  error.value = null;
+
+  // Enhanced validation
+  if (!formData.value.selectedIndustry) {
+    toast.error('Please select an industry');
+    return;
+  }
+
+  if (!formData.value.start_date || !formData.value.end_date) {
+    toast.error('Please select start and end dates');
+    return;
+  }
+
+  // Validate date logic
+  const startDate = new Date(formData.value.start_date);
+  const endDate = new Date(formData.value.end_date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time to start of day
+
+  if (startDate < today) {
+    toast.error('Start date cannot be in the past');
+    return;
+  }
+
+  if (endDate <= startDate) {
+    toast.error('End date must be after start date');
+    return;
+  }
+
+  if (!formData.value.file) {
+    toast.error('Please upload a cover letter');
+    return;
+  }
+
+  // Final validation untuk file
+  if (formData.value.file.size > 2 * 1024 * 1024) {
+    toast.error('File size must be less than 2MB');
+    return;
+  }
+
+  if (formData.value.file.type !== 'application/pdf') {
+    toast.error('Only PDF files are allowed');
+    return;
+  }
+
+  console.log('Validation passed, calling postInternship');
+  postInternship();
+};
+
 const durationMonths = computed(() => {
   const startDate = new Date(internship.value.start_date);
   const endDate = new Date(internship.value.end_date);
@@ -147,8 +379,9 @@ const progressPercentage = computed(() => {
 });
 
 onMounted(() => {
-  studentStatus();
+  fetchUserData();
   fetchInternships();
+  fetchIndustries();
 });
 </script>
 
@@ -156,17 +389,23 @@ onMounted(() => {
   <RoleGuard :allowed-roles="['student']">
     <!-- Form Request -->
     <UseTemplate>
-      <form class="grid items-start gap-4 px-4">
+      <form @submit.prevent="handleSubmit" class="grid items-start gap-4 px-4">
         <div class="grid gap-2">
           <Label for="industry_id">Industry</Label>
-          <Select>
+          <Select v-model="formData.selectedIndustry">
             <SelectTrigger class="w-full">
               <SelectValue placeholder="Select a industry" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>Industries</SelectLabel>
-                <SelectItem value="apple"> Apple </SelectItem>
+                <SelectItem
+                  v-for="industry in industries"
+                  :key="industry.id"
+                  :value="industry.id.toString()"
+                >
+                  {{ industry.name }}
+                </SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -174,18 +413,23 @@ onMounted(() => {
         <div class="grid grid-cols-2 gap-4">
           <div class="grid gap-2">
             <Label for="start_date">Start Date</Label>
-            <Input id="start_date" type="date" />
+            <Input id="start_date" v-model="formData.start_date" type="date" />
           </div>
           <div class="grid gap-2">
             <Label for="end_date">End Date</Label>
-            <Input id="end_date" type="date" />
+            <Input id="end_date" v-model="formData.end_date" type="date" />
           </div>
         </div>
 
         <div class="grid gap-2">
           <Label for="cover_letter">Upload Cover Letter</Label>
-          <Input id="cover_letter" type="file" accept=".pdf,.docx" />
-          <p class="text-sm text-gray-500">Format: PDF or DOCX. Max: 2MB</p>
+          <Input
+            id="cover_letter"
+            type="file"
+            @change="handleFileChange"
+            accept=".pdf"
+          />
+          <p class="text-sm text-gray-500">Format: PDF. Max: 2MB</p>
         </div>
         <Button type="submit" class="bg-amber-400 hover:bg-amber-500">
           Save changes
