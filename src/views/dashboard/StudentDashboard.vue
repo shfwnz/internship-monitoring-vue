@@ -132,7 +132,7 @@ const fetchInternships = async () => {
       toast.error('Server error');
     } else if (error.response?.status === 401) {
       error.value = 'Session expired. Login again.';
-      toast.error('Session expired');
+      toast.error(error.response.data.message);
     } else {
       error.value = 'Failed to fetch data. Try again later.';
       toast.error('Fetch failed');

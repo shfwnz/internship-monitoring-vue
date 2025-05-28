@@ -71,13 +71,17 @@ import {
 // State
 const isOpen = ref(false);
 const industryList = ref([]);
-const industryName = ref('');
 const businessFields = ref([]);
-const selectedBusinessField = ref('');
-const email = ref('');
-const phone = ref('');
-const address = ref('');
 const searchQuery = ref('');
+
+const formData = ref({
+  industryName: '',
+  selectedBusinessField: '',
+  email: '',
+  phone: '',
+  address: '',
+  website: '',
+});
 
 // Responsive Template
 const [UseTemplate, GridForm] = createReusableTemplate();
@@ -148,22 +152,32 @@ const nextPage = () => {
 const createIndustry = async () => {
   try {
     if (
-      !industryName.value ||
-      !selectedBusinessField.value ||
-      !email.value ||
-      !phone.value ||
-      !address.value
+      !formData.value.industryName ||
+      !formData.value.selectedBusinessField ||
+      !formData.value.email ||
+      !formData.value.phone ||
+      !formData.value.address ||
+      !formData.value.website
     ) {
+      console.log('Missing fields:', {
+        industryName: formData.value.industryName,
+        selectedBusinessField: formData.value.selectedBusinessField,
+        email: formData.value.email,
+        phone: formData.value.phone,
+        address: formData.value.address,
+        website: formData.value.website,
+      });
       toast.warning('Please fill in all fields');
       return;
     }
 
     const response = await api.post('/industries', {
-      name: industryName.value,
-      business_field_id: selectedBusinessField.value,
-      email: email.value,
-      phone: phone.value,
-      address: address.value,
+      name: formData.value.industryName,
+      business_field_id: formData.value.selectedBusinessField,
+      email: formData.value.email,
+      phone: formData.value.phone,
+      address: formData.value.address,
+      website: formData.value.website,
     });
 
     toast.success('Successfully added industry');
@@ -178,11 +192,12 @@ const createIndustry = async () => {
 };
 
 const resetForm = () => {
-  industryName.value = '';
-  selectedBusinessField.value = '';
-  email.value = '';
-  phone.value = '';
-  address.value = '';
+  formData.value.industryName = '';
+  formData.value.selectedBusinessField = '';
+  formData.value.email = '';
+  formData.value.phone = '';
+  formData.value.address = '';
+  formData.value.website = '';
 };
 
 onMounted(() => {
@@ -197,6 +212,88 @@ watch(searchQuery, () => {
 
 <template>
   <div class="container mx-auto py-2 flex flex-col min-h-screen">
+    <!-- Form -->
+    <UseTemplate>
+      <form
+        @submit.prevent="createIndustry()"
+        class="grid items-start gap-4 px-4 w-full"
+      >
+        <div class="grid gap-2">
+          <Label for="name" class="font-medium">Industry Name</Label>
+          <Input
+            v-model="formData.industryName"
+            id="name"
+            placeholder="Enter industry name"
+          />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="grid gap-2">
+            <Label for="business_field" class="font-medium"
+              >Business Field</Label
+            >
+            <Select
+              v-model="formData.selectedBusinessField"
+              id="business_field"
+            >
+              <SelectTrigger class="w-full">
+                <SelectValue placeholder="Select a business field" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Business Field</SelectLabel>
+                  <SelectItem
+                    v-for="field in businessFields"
+                    :key="field.id"
+                    :value="field.id"
+                  >
+                    <SelectItemText>{{ field.name }}</SelectItemText>
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="grid gap-2">
+            <Label for="website" class="font-medium">Website</Label>
+            <Input
+              v-model="formData.website"
+              id="website"
+              placeholder="https://example.com"
+            />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="grid gap-2">
+            <Label for="email" class="font-medium">Email</Label>
+            <Input
+              v-model="formData.email"
+              id="email"
+              type="email"
+              placeholder="contact@example.com"
+            />
+          </div>
+          <div class="grid gap-2">
+            <Label for="phone" class="font-medium">Phone</Label>
+            <Input
+              v-model="formData.phone"
+              id="phone"
+              placeholder="+62 xxx xxxx xxxx"
+            />
+          </div>
+        </div>
+        <div class="grid gap-2">
+          <Label for="address" class="font-medium">Address</Label>
+          <Input
+            v-model="formData.address"
+            id="address"
+            placeholder="Full address"
+          />
+        </div>
+        <Button type="submit" class="bg-amber-400 hover:bg-amber-500">
+          Submit Industry
+        </Button>
+      </form>
+    </UseTemplate>
+
     <div class="grid grid-cols-1 md:grid-cols-4 gap-2 flex-grow">
       <!-- Industry List -->
       <Card class="col-span-1 md:col-span-3">
@@ -220,6 +317,7 @@ watch(searchQuery, () => {
                 <TableHead>Business Field</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
+                <TableHead>Website</TableHead>
                 <TableHead class="text-right"> Address </TableHead>
               </TableRow>
             </TableHeader>
@@ -233,14 +331,13 @@ watch(searchQuery, () => {
                 </TableCell>
                 <TableCell>
                   <Badge variant="default" class="bg-amber-500">
-                    {{ industry.business_field.name }}
+                    {{ industry.business_field?.name }}
                   </Badge>
                 </TableCell>
                 <TableCell>{{ industry.email }}</TableCell>
                 <TableCell>{{ industry.phone }}</TableCell>
-                <TableCell class="text-right max-w-40 truncate">{{
-                  industry.address
-                }}</TableCell>
+                <TableCell>{{ industry.website }}</TableCell>
+                <TableCell class="text-right">{{ industry.address }}</TableCell>
               </TableRow>
               <TableRow v-if="paginatedIndustries.length === 0">
                 <TableCell colspan="5" class="text-center py-4">
@@ -361,71 +458,6 @@ watch(searchQuery, () => {
 
         <!-- form -->
         <CardContent class="h-full items-center flex justify-center py-6">
-          <UseTemplate>
-            <form
-              @submit.prevent="createIndustry()"
-              class="grid items-start gap-4 px-4 w-full"
-            >
-              <div class="grid gap-2">
-                <Label for="name" class="font-medium">Industry Name</Label>
-                <Input
-                  v-model="industryName"
-                  id="name"
-                  placeholder="Enter industry name"
-                />
-              </div>
-              <div class="grid gap-2">
-                <Label for="business_field" class="font-medium"
-                  >Business Field</Label
-                >
-                <Select v-model="selectedBusinessField" id="business_field">
-                  <SelectTrigger class="w-full">
-                    <SelectValue placeholder="Select a business field" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Business Field</SelectLabel>
-                      <SelectItem
-                        v-for="field in businessFields"
-                        :key="field.id"
-                        :value="field.id"
-                      >
-                        <SelectItemText>{{ field.name }}</SelectItemText>
-                      </SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div class="grid grid-cols-2 gap-4">
-                <div class="grid gap-2">
-                  <Label for="email" class="font-medium">Email</Label>
-                  <Input
-                    v-model="email"
-                    id="email"
-                    type="email"
-                    placeholder="contact@example.com"
-                  />
-                </div>
-                <div class="grid gap-2">
-                  <Label for="phone" class="font-medium">Phone</Label>
-                  <Input
-                    v-model="phone"
-                    id="phone"
-                    placeholder="+62 xxx xxxx xxxx"
-                  />
-                </div>
-              </div>
-              <div class="grid gap-2">
-                <Label for="address" class="font-medium">Address</Label>
-                <Input
-                  v-model="address"
-                  id="address"
-                  placeholder="Full address"
-                />
-              </div>
-            </form>
-          </UseTemplate>
-
           <!-- desktop form -->
           <!-- eslint-disable-next-line -->
           <Dialog v-if="isDesktop" v-model:open="isOpen">
@@ -443,14 +475,6 @@ watch(searchQuery, () => {
                 </DialogDescription>
               </DialogHeader>
               <GridForm />
-
-              <Button
-                type="submit"
-                class="bg-amber-400 hover:bg-amber-500"
-                @click="createIndustry()"
-              >
-                Submit Industry
-              </Button>
             </DialogContent>
           </Dialog>
 
@@ -475,13 +499,6 @@ watch(searchQuery, () => {
                 <GridForm />
               </div>
               <DrawerFooter class="pt-2">
-                <Button
-                  type="submit"
-                  class="bg-amber-400 hover:bg-amber-500"
-                  @click="createIndustry()"
-                >
-                  Submit Industry
-                </Button>
                 <DrawerClose as-child>
                   <Button
                     variant="outline"
@@ -498,7 +515,7 @@ watch(searchQuery, () => {
 
         <CardFooter class="border-t flex justify-between">
           <span class="text-sm">Help us improve our industry database</span>
-          <span class="text-sm font-medium"
+          <span class="text-sm text-right"
             >Thank you for your contribution</span
           >
         </CardFooter>
