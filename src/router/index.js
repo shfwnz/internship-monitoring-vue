@@ -69,7 +69,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // if user is authenticated
-  if ((to.name === 'Login' || to.name === 'Register') && isAuthenticated) {
+  if ((to.name === 'login' || to.name === 'register') && isAuthenticated) {
     return next(userRole === 'student' ? 'app/student' : 'app/teacher');
   }
 

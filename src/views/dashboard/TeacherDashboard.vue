@@ -1,9 +1,15 @@
 <script setup>
+// Import Vue
 import { ref, onMounted, computed, watch } from 'vue';
+import { useRouter } from 'vue-router';
+
+// Import Lucide
 import { Minimize, Maximize } from 'lucide-vue-next';
 
+// Import API
 import api from '@/api';
 
+// Import UI components
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,21 +39,27 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 
+const LARAVEL_BASE_URL = 'http://127.0.0.1:8000';
+
+// State
 const internshipList = ref([]);
 const studentList = ref([]);
 const isLoading = ref(false);
 
+// Search
 const internshipSearchQuery = ref('');
 const studentSearchQuery = ref('');
-
-const internshipMaximized = ref(true);
-const studentMaximized = ref(false);
 
 // Pagination
 const internshipCurrentPage = ref(1);
 const studentCurrentPage = ref(1);
 const itemsPerPage = ref(5);
 
+// Toggle maximize
+const internshipMaximized = ref(true);
+const studentMaximized = ref(false);
+
+// Toggle maximize functions
 const toggleInternshipMaximize = () => {
   internshipMaximized.value = !internshipMaximized.value;
   if (internshipMaximized.value) {
@@ -62,6 +74,7 @@ const toggleStudentMaximize = () => {
   }
 };
 
+// Computed properties
 const filteredInternships = computed(() => {
   if (!internshipSearchQuery.value) {
     return internshipList.value;
@@ -106,7 +119,7 @@ const paginatedStudents = computed(() => {
   return filteredStudents.value.slice(start, end);
 });
 
-// Internship Pagination
+// Internship pagination
 const canPreviousPageInternship = computed(
   () => internshipCurrentPage.value > 1
 );
@@ -126,7 +139,7 @@ const nextPageInternship = () => {
   if (canNextPageInternship.value) internshipCurrentPage.value++;
 };
 
-// Student Pagination
+// Student pagination
 const canPreviousPageStudent = computed(() => studentCurrentPage.value > 1);
 const canNextPageStudent = computed(
   () => studentCurrentPage.value < totalPagesStudent.value
@@ -144,6 +157,7 @@ const nextPageStudent = () => {
   if (canNextPageStudent.value) studentCurrentPage.value++;
 };
 
+// Fetch data
 const fetchInternships = async () => {
   isLoading.value = true;
   try {
@@ -170,6 +184,16 @@ const fetchStudents = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const getFullFileUrl = (filePath) => {
+  if (!filePath) return '#';
+
+  if (filePath.startsWith('http')) {
+    return filePath;
+  }
+
+  return `${LARAVEL_BASE_URL}/storage/${filePath}`;
 };
 
 onMounted(() => {
@@ -226,6 +250,7 @@ watch(studentSearchQuery, () => {
                 <TableHead>Student Name</TableHead>
                 <TableHead>Industry Name</TableHead>
                 <TableHead>Teacher Name</TableHead>
+                <TableHead>File</TableHead>
                 <TableHead class="text-right">Start Date - End Date</TableHead>
               </TableRow>
             </TableHeader>
@@ -242,15 +267,23 @@ watch(studentSearchQuery, () => {
                   :key="internship.id"
                 >
                   <TableCell class="font-medium">{{
-                    internship.student.user.name || 'Unknown'
+                    internship.student?.user?.name || 'Unknown'
                   }}</TableCell>
                   <TableCell>
-                    {{ internship.industry.name || 'Unknown' }}
+                    {{ internship.industry?.name || 'Unknown' }}
                   </TableCell>
                   <TableCell>{{
-                    internship.teacher.user.name || 'Unknown'
+                    internship.teacher?.user?.name || 'Unknown'
                   }}</TableCell>
-
+                  <TableCell>
+                    <a
+                      :href="getFullFileUrl(internship.file)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-blue-500 hover:underline"
+                      >View</a
+                    >
+                  </TableCell>
                   <TableCell class="text-right"
                     >{{ internship.start_date || 'Unknown' }} -
                     {{ internship.end_date || 'Unknown' }}</TableCell
@@ -411,6 +444,7 @@ watch(studentSearchQuery, () => {
                 <TableHead>NIS</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
+                <TableHead>Gender</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead class="text-right">Address</TableHead>
               </TableRow>
@@ -428,17 +462,27 @@ watch(studentSearchQuery, () => {
                   :key="student.id"
                 >
                   <TableCell class="font-medium">{{
-                    student.user.name || 'Unknown'
+                    student.user?.name || 'Unknown'
                   }}</TableCell>
                   <TableCell>
                     {{ student.nis || 'Unknown' }}
                   </TableCell>
-                  <TableCell>{{ student.user.email || 'Unknown' }}</TableCell>
-                  <TableCell>{{ student.user.phone || 'Unknown' }}</TableCell>
-                  <TableCell>{{ student.status || 'Unknown' }}</TableCell>
-
-                  <TableCell class="text-right max-w-10 truncate"
-                    >{{ student.user.address || 'Unknown' }}
+                  <TableCell>{{ student.user?.email || 'Unknown' }}</TableCell>
+                  <TableCell>{{ student.user?.phone || 'Unknown' }}</TableCell>
+                  <TableCell>
+                    {{
+                      student.user?.gender === 'L'
+                        ? 'Male'
+                        : student.user?.gender === 'P'
+                        ? 'Female'
+                        : 'Unknown'
+                    }}
+                  </TableCell>
+                  <TableCell>{{
+                    student.status ? 'Active' : 'Inactive'
+                  }}</TableCell>
+                  <TableCell class="text-right"
+                    >{{ student.user?.address || 'Unknown' }}
                   </TableCell>
                 </TableRow>
               </template>

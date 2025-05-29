@@ -1,17 +1,14 @@
 <script setup>
-// Vue
+// IMPORTS
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
-// Third party
-import { useMediaQuery } from '@vueuse/core';
+import { set, useMediaQuery } from '@vueuse/core';
 import { toast } from 'vue-sonner';
 import { Moon, Menu, Sun, UserCircle } from 'lucide-vue-next';
 
-// API
 import api from '@/api';
 
-// UI Components
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -34,15 +31,19 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer';
 
+// REACTIVE DATA
 const router = useRouter();
 
 const isDrawerOpen = ref(false);
 const isMenuDrawerOpen = ref(false);
 const isDark = ref(false);
 const isLoading = ref(true);
-const isDesktop = useMediaQuery('(min-width: 768px)');
+
 const currentUser = ref(null);
 
+const isDesktop = useMediaQuery('(min-width: 768px)');
+
+// COMPUTED PROPERTIES
 const links = computed(() => {
   const userRole = currentUser.value?.role || localStorage.getItem('role');
 
@@ -76,6 +77,7 @@ const userInitials = computed(() => {
   if (!currentUser.value) return 'U';
 
   const names = currentUser.value.name?.split(' ') || [];
+
   if (names.length >= 2) {
     return (names[0]?.[0] + names[names.length - 1]?.[0]).toUpperCase();
   } else if (names.length === 1) {
@@ -93,6 +95,7 @@ const userInitials = computed(() => {
 
 const userDisplayName = computed(() => {
   if (!currentUser.value) return 'User';
+
   return (
     currentUser.value.name ||
     currentUser.value.username ||
@@ -101,6 +104,85 @@ const userDisplayName = computed(() => {
   );
 });
 
+// API FUNCTIONS
+const fetchUser = async () => {
+  isLoading.value = true;
+
+  try {
+    // Load cached user data first
+    const cachedUser = localStorage.getItem('user');
+    if (cachedUser) {
+      currentUser.value = JSON.parse(cachedUser);
+    }
+
+    // Fetch fresh data from API
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    const response = await api.get('/me', { headers });
+
+    if (response.data.user) {
+      currentUser.value = response.data.user;
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+  } catch (error) {
+    if (error.response?.status === 404) {
+      toast.warning('Not registered yet');
+
+      setTimeout(() => {
+        router.push('/register');
+      }, 1000);
+    } else if (error.response?.status >= 500) {
+      toast.error('Server error');
+    } else if (error.response?.status === 401) {
+      toast.error(error.response.data.message);
+
+      setTimeout(() => {
+        logout(true);
+      }, 1000);
+    } else {
+      toast.error('Fetch failed');
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const logout = async (isSessionExpired = false) => {
+  try {
+    // Call logout API if not session expired
+    if (!isSessionExpired) {
+      await api.post('/logout');
+    }
+
+    // Clear local storage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('role');
+
+    // Show success message
+    if (!isSessionExpired) {
+      toast.success('Logout successful');
+    }
+
+    // Redirect to login
+    setTimeout(() => {
+      router.push('/login');
+    }, 1000);
+  } catch (err) {
+    // Clear storage even if API call fails
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('role');
+
+    toast.success('There was an error logging out.');
+
+    setTimeout(() => {
+      router.push('/login');
+    }, 100);
+  }
+};
+
+// UI CONTROLS
 const openDrawer = () => {
   isDrawerOpen.value = true;
 };
@@ -121,77 +203,7 @@ const toggleTheme = () => {
   isDark.value = !isDark.value;
 };
 
-const fetchUser = async () => {
-  isLoading.value = true;
-
-  try {
-    const cachedUser = localStorage.getItem('user');
-    if (cachedUser) {
-      currentUser.value = JSON.parse(cachedUser);
-    }
-
-    const token = localStorage.getItem('token');
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
-
-    const response = await api.get('/me', { headers });
-
-    if (response.data.user) {
-      currentUser.value = response.data.user;
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-    }
-  } catch (error) {
-    if (error.response?.status === 404) {
-      toast.warning('Not registered yet');
-      router.push('/register');
-    } else if (error.response?.status >= 500) {
-      toast.error('Server error');
-    } else if (error.response?.status === 401) {
-      toast.error(error.response.data.message);
-      setTimeout(() => {
-        logout(true);
-      }, 1000);
-    } else {
-      toast.error('Fetch failed');
-    }
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-const logout = async (isSessionExpired = false) => {
-  try {
-    if (!isSessionExpired) {
-      await api.post('/logout');
-    }
-
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('role');
-
-    if (!isSessionExpired) {
-      toast.success('Logout successful');
-    }
-
-    setTimeout(() => {
-      router.push('/login');
-    }, 100);
-  } catch (err) {
-    console.error('Logout error:', err);
-
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('role');
-
-    toast.success('There was an error logging out.');
-
-    setTimeout(() => {
-      router.push('/login');
-    }, 100);
-  }
-};
-
+// LIFECYCLE
 onMounted(() => {
   fetchUser();
 });
@@ -275,7 +287,7 @@ onMounted(() => {
               </DropdownMenuItem>
             </router-link>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <Moon v-if="!isDark" :size="20" />
                 <Sun v-else :size="20" />
