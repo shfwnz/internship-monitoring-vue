@@ -268,67 +268,78 @@ onMounted(() => {
             </div>
           </div>
         </div>
+
         <!-- Form Fields -->
-        <div class="grid grid-cols-2 md:grid-cols-2 gap-4 w-full">
-          <div class="space-y-2 col-span-1">
-            <Label for="name">Full Name</Label>
-            <Input
-              id="name"
-              v-model="editForm.name"
-              placeholder="Enter your full name"
-            />
+        <div class="space-y-4 w-full">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <Label for="name">Full Name</Label>
+              <Input
+                id="name"
+                v-model="editForm.name"
+                placeholder="Enter your full name"
+              />
+            </div>
+            <div class="space-y-2" v-if="userProfile.roles[0] === 'student'">
+              <Label for="nis">NIS</Label>
+              <Input
+                id="nis"
+                v-model="editForm.nis"
+                placeholder="Enter your student id"
+              />
+            </div>
+            <div class="space-y-2" v-if="userProfile.roles[0] === 'teacher'">
+              <Label for="nip">NIP</Label>
+              <Input
+                id="nip"
+                v-model="editForm.nip"
+                placeholder="Enter your teacher id"
+              />
+            </div>
           </div>
 
-          <div class="space-y-2 col-span-1">
-            <Label for="email">NIS</Label>
-            <Input
-              id="nis"
-              v-model="editForm.nis"
-              placeholder="Enter your student id"
-            />
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <Label for="email">Email</Label>
+              <Input
+                id="email"
+                v-model="editForm.email"
+                type="email"
+                placeholder="Enter your email"
+              />
+            </div>
+            <div class="space-y-2">
+              <Label for="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                v-model="editForm.phone"
+                placeholder="Enter your phone"
+              />
+            </div>
           </div>
 
-          <div class="space-y-2 col-span-1">
-            <Label for="email">Email</Label>
-            <Input
-              id="email"
-              v-model="editForm.email"
-              type="email"
-              placeholder="Enter your email"
-            />
+          <div class="space-y-2">
+            <Label for="gender">Gender</Label>
+            <Select v-model="editForm.gender">
+              <SelectTrigger>
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="L">Male</SelectItem>
+                <SelectItem value="P">Female</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div class="space-y-2 col-span-1">
-            <Label for="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              v-model="editForm.phone"
-              placeholder="Enter your phone"
+          <div class="space-y-2">
+            <Label for="address">Address</Label>
+            <Textarea
+              id="address"
+              v-model="editForm.address"
+              placeholder="Enter your address"
+              rows="1"
             />
           </div>
-        </div>
-
-        <div class="space-y-2 w-full">
-          <Label for="gender">Gender</Label>
-          <Select v-model="editForm.gender">
-            <SelectTrigger>
-              <SelectValue placeholder="Select gender" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="L">Male</SelectItem>
-              <SelectItem value="P">Female</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div class="space-y-2">
-          <Label for="address">Address</Label>
-          <Textarea
-            id="address"
-            v-model="editForm.address"
-            placeholder="Enter your address"
-            rows="1"
-          />
         </div>
       </form>
     </UseTemplate>
@@ -348,7 +359,7 @@ onMounted(() => {
         <Card>
           <CardHeader class="pb-4">
             <div
-              class="flex flex-col md:flex-row items-start md:items-center gap-6"
+              class="flex flex-col md:flex-row items-center md:items-center gap-6"
             >
               <!-- Profile Picture -->
               <div class="relative">
@@ -366,9 +377,9 @@ onMounted(() => {
               <!-- Basic Info -->
               <div class="flex-1 space-y-2">
                 <div
-                  class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                  class="flex flex-col items-center md:flex-row md:items-center md:justify-between gap-4"
                 >
-                  <div>
+                  <div class="flex flex-col items-center md:items-start">
                     <CardTitle class="text-2xl md:text-3xl">
                       {{ userProfile.name || 'Unknown User' }}
                     </CardTitle>
@@ -390,10 +401,12 @@ onMounted(() => {
 
                 <!-- Quick Stats -->
                 <div
-                  class="grid grid-cols-2 gap-4 mt-4"
+                  class="grid gap-4 mt-4"
                   :class="{
-                    'md:grid-cols-4': userProfile.roles[0] === 'student',
-                    'md:grid-cols-3': userProfile.roles[0] === 'teacher',
+                    'grid-cols-2 md:grid-cols-4':
+                      userProfile.roles[0] === 'student',
+                    'grid-cols-3 md:grid-cols-3':
+                      userProfile.roles[0] === 'teacher',
                   }"
                 >
                   <div class="text-center p-3 bg-gray-50 rounded-lg">
@@ -520,9 +533,9 @@ onMounted(() => {
                     class="space-y-2"
                   >
                     <div class="text-sm text-gray-500">Student ID (NIS)</div>
-                    <div class="font-medium text-lg">
+                    <badge variant="outline" class="w-fit">
                       {{ userProfile.profile?.nis }}
-                    </div>
+                    </badge>
                   </div>
 
                   <div
@@ -532,9 +545,9 @@ onMounted(() => {
                     class="space-y-2"
                   >
                     <div class="text-sm text-gray-500">Teacher ID (NIP)</div>
-                    <div class="font-medium text-lg">
+                    <badge variant="outline" class="w-fit">
                       {{ userProfile.profile?.nip }}
-                    </div>
+                    </badge>
                   </div>
 
                   <div class="space-y-2">
