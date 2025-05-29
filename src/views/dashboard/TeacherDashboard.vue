@@ -2,6 +2,7 @@
 // Import Vue
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useMediaQuery } from '@vueuse/core';
 
 // Import Lucide
 import { Minimize, Maximize } from 'lucide-vue-next';
@@ -45,6 +46,8 @@ const LARAVEL_BASE_URL = 'http://127.0.0.1:8000';
 const internshipList = ref([]);
 const studentList = ref([]);
 const isLoading = ref(false);
+
+const isDesktop = useMediaQuery('(min-width: 768px)');
 
 // Search
 const internshipSearchQuery = ref('');
@@ -212,13 +215,15 @@ watch(studentSearchQuery, () => {
 
 <template>
   <RoleGuard :allowed-roles="['teacher']">
-    <div class="container mx-auto py-6 max-w-4xl grid grid-cols-4 gap-4">
+    <div
+      class="container mx-auto py-6 max-w-4xl grid grid-cols-1 md:grid-cols-8 gap-4"
+    >
       <!-- Internship List -->
       <Card
         class="min-h-screen"
         :class="{
-          'col-span-1 md:col-span-3': internshipMaximized,
-          'col-span-1 md:col-span-1': studentMaximized,
+          'col-span-1 md:col-span-5': internshipMaximized,
+          'col-span-1 md:col-span-3': studentMaximized,
         }"
       >
         <CardHeader class="flex justify-between items-center">
@@ -228,7 +233,7 @@ watch(studentSearchQuery, () => {
             >
             <CardDescription>Current status and completion</CardDescription>
           </div>
-          <div>
+          <div v-if="isDesktop">
             <Button
               v-if="!internshipMaximized"
               @click="toggleInternshipMaximize"
@@ -412,8 +417,8 @@ watch(studentSearchQuery, () => {
       <Card
         class="min-h-screen"
         :class="{
-          'col-span-1 md:col-span-3': studentMaximized,
-          'col-span-1 md:col-span-1': internshipMaximized,
+          'col-span-1 md:col-span-5': studentMaximized,
+          'col-span-1 md:col-span-3': internshipMaximized,
         }"
       >
         <CardHeader class="flex justify-between items-center">
@@ -421,7 +426,7 @@ watch(studentSearchQuery, () => {
             <CardTitle class="text-xl capitalize">Student Data</CardTitle>
             <CardDescription>Current status and completion</CardDescription>
           </div>
-          <div>
+          <div v-if="isDesktop">
             <Button
               v-if="!studentMaximized"
               @click="toggleStudentMaximize"
