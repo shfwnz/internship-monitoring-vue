@@ -210,7 +210,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="container mx-auto bg-white rounded-2xl">
+  <div class="container mx-auto max-w-4xl bg-white rounded-2xl">
     <nav class="flex py-2 px-4 items-center">
       <!-- Mobile Menu -->
       <div v-if="!isDesktop" class="mr-2">

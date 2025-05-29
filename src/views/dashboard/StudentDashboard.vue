@@ -356,7 +356,7 @@ onMounted(() => {
       </form>
     </UseTemplate>
 
-    <div class="container mx-auto py-2 flex flex-col min-h-screen">
+    <div class="container mx-auto py-6 max-w-4xl flex flex-col min-h-screen">
       <!-- Loading State -->
       <div v-if="isLoading" class="flex items-center justify-center h-64">
         <div class="flex flex-col items-center">

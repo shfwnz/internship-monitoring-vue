@@ -216,7 +216,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="container mx-auto py-2 flex flex-col min-h-screen">
+  <div class="container mx-auto py-6 max-w-4xl flex flex-col min-h-screen">
     <!-- Form -->
     <UseTemplate>
       <form

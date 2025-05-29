@@ -212,7 +212,7 @@ watch(studentSearchQuery, () => {
 
 <template>
   <RoleGuard :allowed-roles="['teacher']">
-    <div class="container mx-auto py-2 grid grid-cols-4 gap-4">
+    <div class="container mx-auto py-6 max-w-4xl grid grid-cols-4 gap-4">
       <!-- Internship List -->
       <Card
         class="min-h-screen"
