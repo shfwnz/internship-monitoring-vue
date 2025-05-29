@@ -5,7 +5,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 // API
 import api from '@/api';
 
-// Third-party
+// Third-party utilities
 import { toast } from 'vue-sonner';
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
 
@@ -68,12 +68,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-// State
-const isOpen = ref(false);
+// Reactive data
 const industryList = ref([]);
 const businessFields = ref([]);
-const searchQuery = ref('');
 
+// Form data
 const formData = ref({
   industryName: '',
   selectedBusinessField: '',
@@ -83,36 +82,19 @@ const formData = ref({
   website: '',
 });
 
-// Responsive Template
-const [UseTemplate, GridForm] = createReusableTemplate();
-const isDesktop = useMediaQuery('(min-width: 768px)');
+// UI states
+const isOpen = ref(false);
+const searchQuery = ref('');
 
 // Pagination
 const currentPage = ref(1);
 const itemsPerPage = ref(6);
 
-// Fetch Data
-const fetchIndustries = async () => {
-  try {
-    const response = await api.get('/industries');
-    industryList.value = response.data.all_data;
-  } catch (error) {
-    console.error(error);
-    toast.error('Failed to fetch industries');
-  }
-};
+// Responsive
+const [UseTemplate, GridForm] = createReusableTemplate();
+const isDesktop = useMediaQuery('(min-width: 768px)');
 
-const fetchBusinessFields = async () => {
-  try {
-    const response = await api.get('/business-fields');
-    businessFields.value = response.data.data;
-  } catch (error) {
-    console.error(error);
-    toast.error('Failed to fetch business fields');
-  }
-};
-
-// Computed
+// Computed properties
 const filteredIndustries = computed(() => {
   if (!searchQuery.value) return industryList.value;
 
@@ -135,38 +117,41 @@ const paginatedIndustries = computed(() => {
 const canPreviousPage = computed(() => currentPage.value > 1);
 const canNextPage = computed(() => currentPage.value < totalPages.value);
 
-// Pagination Controls
-const goToPage = (page) => {
-  currentPage.value = page;
+// API functions
+const fetchIndustries = async () => {
+  try {
+    const response = await api.get('/industries');
+    industryList.value = response.data.all_data;
+  } catch (error) {
+    toast.error('Failed to fetch industries');
+  }
 };
 
-const previousPage = () => {
-  if (canPreviousPage.value) currentPage.value--;
+const fetchBusinessFields = async () => {
+  try {
+    const response = await api.get('/business-fields');
+    businessFields.value = response.data.data;
+  } catch (error) {
+    toast.error('Failed to fetch business fields');
+  }
 };
 
-const nextPage = () => {
-  if (canNextPage.value) currentPage.value++;
-};
-
-// Create Industry
 const createIndustry = async () => {
   try {
-    if (
-      !formData.value.industryName ||
-      !formData.value.selectedBusinessField ||
-      !formData.value.email ||
-      !formData.value.phone ||
-      !formData.value.address ||
-      !formData.value.website
-    ) {
-      console.log('Missing fields:', {
-        industryName: formData.value.industryName,
-        selectedBusinessField: formData.value.selectedBusinessField,
-        email: formData.value.email,
-        phone: formData.value.phone,
-        address: formData.value.address,
-        website: formData.value.website,
-      });
+    const requiredFields = [
+      'industryName',
+      'selectedBusinessField',
+      'email',
+      'phone',
+      'address',
+      'website',
+    ];
+
+    const missingFields = requiredFields.filter(
+      (field) => !formData.value[field]
+    );
+
+    if (missingFields.length > 0) {
       toast.warning('Please fill in all fields');
       return;
     }
@@ -183,30 +168,50 @@ const createIndustry = async () => {
     toast.success('Successfully added industry');
     resetForm();
     isOpen.value = false;
-
     await fetchIndustries();
   } catch (error) {
-    console.error(error);
     toast.error('Failed to add industry');
   }
 };
 
-const resetForm = () => {
-  formData.value.industryName = '';
-  formData.value.selectedBusinessField = '';
-  formData.value.email = '';
-  formData.value.phone = '';
-  formData.value.address = '';
-  formData.value.website = '';
+// Pagination controls
+const goToPage = (page) => {
+  currentPage.value = page;
 };
 
+const previousPage = () => {
+  if (canPreviousPage.value) {
+    currentPage.value--;
+  }
+};
+
+const nextPage = () => {
+  if (canNextPage.value) {
+    currentPage.value++;
+  }
+};
+
+// Utility functions
+const resetForm = () => {
+  formData.value = {
+    industryName: '',
+    selectedBusinessField: '',
+    email: '',
+    phone: '',
+    address: '',
+    website: '',
+  };
+};
+
+// Watchers
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
+
+// Lifecycle
 onMounted(() => {
   fetchIndustries();
   fetchBusinessFields();
-});
-
-watch(searchQuery, () => {
-  currentPage.value = 1;
 });
 </script>
 

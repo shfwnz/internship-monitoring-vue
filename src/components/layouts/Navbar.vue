@@ -141,8 +141,20 @@ const fetchUser = async () => {
       currentUser.value = response.data.user;
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
-  } catch (err) {
-    console.error('Error fetching user data:', err);
+  } catch (error) {
+    if (error.response?.status === 404) {
+      toast.warning('Not registered yet');
+      router.push('/register');
+    } else if (error.response?.status >= 500) {
+      toast.error('Server error');
+    } else if (error.response?.status === 401) {
+      toast.error(error.response.data.message);
+      setTimeout(() => {
+        logout(true);
+      }, 1000);
+    } else {
+      toast.error('Fetch failed');
+    }
   } finally {
     isLoading.value = false;
   }
