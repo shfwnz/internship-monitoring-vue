@@ -280,6 +280,15 @@ onMounted(() => {
           </div>
 
           <div class="space-y-2 col-span-1">
+            <Label for="email">NIS</Label>
+            <Input
+              id="nis"
+              v-model="editForm.nis"
+              placeholder="Enter your student id"
+            />
+          </div>
+
+          <div class="space-y-2 col-span-1">
             <Label for="email">Email</Label>
             <Input
               id="email"
@@ -294,22 +303,22 @@ onMounted(() => {
             <Input
               id="phone"
               v-model="editForm.phone"
-              placeholder="Enter your phone number"
+              placeholder="Enter your phone"
             />
           </div>
+        </div>
 
-          <div class="space-y-2 col-span-1">
-            <Label for="gender">Gender</Label>
-            <Select v-model="editForm.gender">
-              <SelectTrigger>
-                <SelectValue placeholder="Select gender" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="L">Male</SelectItem>
-                <SelectItem value="P">Female</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div class="space-y-2 w-full">
+          <Label for="gender">Gender</Label>
+          <Select v-model="editForm.gender">
+            <SelectTrigger>
+              <SelectValue placeholder="Select gender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="L">Male</SelectItem>
+              <SelectItem value="P">Female</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div class="space-y-2">
