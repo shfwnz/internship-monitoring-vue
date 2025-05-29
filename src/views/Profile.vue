@@ -3,6 +3,8 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
+
 // Import Lucide icons
 import {
   User,
@@ -26,7 +28,10 @@ import api from '@/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Card,
   CardContent,
@@ -34,7 +39,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -43,8 +47,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 import {
   Select,
   SelectContent,
@@ -63,7 +75,8 @@ const router = useRouter();
 const userProfile = ref({});
 const isLoading = ref(false);
 const isEditing = ref(false);
-const isEditDialogOpen = ref(false);
+const isEditOpen = ref(false);
+const isOpen = ref(false);
 
 // Form data for editing
 const editForm = ref({
@@ -72,9 +85,11 @@ const editForm = ref({
   phone: '',
   address: '',
   gender: '',
-  date_of_birth: '',
-  bio: '',
 });
+
+// Responsive
+const [UseTemplate, GridForm] = createReusableTemplate();
+const isDesktop = useMediaQuery('(min-width: 768px)');
 
 // Profile image upload
 const selectedImage = ref(null);
@@ -147,12 +162,12 @@ const fetchProfile = async () => {
   }
 };
 
-const openEditDialog = () => {
-  isEditDialogOpen.value = true;
+const openEdit = () => {
+  isOpen.value = true;
 };
 
-const closeEditDialog = () => {
-  isEditDialogOpen.value = false;
+const closeEdit = () => {
+  isEditOpen.value = false;
   // Reset form to original values
   const user = userProfile.value.user || {};
   editForm.value = {
@@ -226,6 +241,96 @@ onMounted(() => {
 
 <template>
   <RoleGuard :allowed-roles="['teacher', 'student', 'admin']">
+    <UseTemplate>
+      <div class="space-y-6 py-4">
+        <!-- Profile Image Upload -->
+        <div class="space-y-4">
+          <Label>Profile Picture</Label>
+          <div class="flex items-center gap-4">
+            <Avatar class="h-20 w-20">
+              <AvatarImage
+                :src="
+                  imagePreview ||
+                  getFullImageUrl(userProfile.user?.profile_image)
+                "
+                :alt="editForm.name"
+              />
+              <AvatarFallback>{{ userInitials }}</AvatarFallback>
+            </Avatar>
+            <div>
+              <Label for="image-upload" class="cursor-pointer">
+                <Button variant="outline" size="sm" as="span">
+                  <Camera class="h-4 w-4 mr-2" />
+                  Change Photo
+                </Button>
+              </Label>
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                @change="handleImageUpload"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Fields -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <Label for="name">Full Name</Label>
+            <Input
+              id="name"
+              v-model="editForm.name"
+              placeholder="Enter your full name"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <Label for="email">Email</Label>
+            <Input
+              id="email"
+              v-model="editForm.email"
+              type="email"
+              placeholder="Enter your email"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <Label for="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              v-model="editForm.phone"
+              placeholder="Enter your phone number"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <Label for="gender">Gender</Label>
+            <Select v-model="editForm.gender">
+              <SelectTrigger>
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="L">Male</SelectItem>
+                <SelectItem value="P">Female</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <Label for="address">Address</Label>
+          <Textarea
+            id="address"
+            v-model="editForm.address"
+            placeholder="Enter your address"
+            rows="2"
+          />
+        </div>
+      </div>
+    </UseTemplate>
+
     <div class="container mx-auto py-6 max-w-4xl">
       <!-- Loading State -->
       <div
@@ -274,7 +379,7 @@ onMounted(() => {
                     <Badge variant="outline" class="text-sm">
                       {{ roleDisplay }}
                     </Badge>
-                    <Button @click="openEditDialog" variant="outline" size="sm">
+                    <Button @click="openEdit" variant="outline" size="sm">
                       <Edit class="h-4 w-4 mr-2" />
                       Edit Profile
                     </Button>
@@ -406,10 +511,27 @@ onMounted(() => {
               </CardHeader>
               <CardContent>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div v-if="userProfile.profile" class="space-y-2">
+                  <div
+                    v-if="
+                      userProfile.roles[0] === 'student' && userProfile.profile
+                    "
+                    class="space-y-2"
+                  >
                     <div class="text-sm text-gray-500">Student ID (NIS)</div>
                     <div class="font-medium text-lg">
                       {{ userProfile.profile?.nis }}
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="
+                      userProfile.roles[0] === 'teacher' && userProfile.profile
+                    "
+                    class="space-y-2"
+                  >
+                    <div class="text-sm text-gray-500">Teacher ID (NIP)</div>
+                    <div class="font-medium text-lg">
+                      {{ userProfile.profile?.nip }}
                     </div>
                   </div>
 
@@ -473,8 +595,8 @@ onMounted(() => {
         </Tabs>
       </div>
 
-      <!-- Edit Profile Dialog -->
-      <Dialog :open="isEditDialogOpen" @update:open="isEditDialogOpen = $event">
+      <!-- Desktop -->
+      <Dialog :open="isEditOpen" @update:open="isEditOpen = $event">
         <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
@@ -482,114 +604,7 @@ onMounted(() => {
               Update your profile information and profile picture.
             </DialogDescription>
           </DialogHeader>
-
-          <div class="space-y-6 py-4">
-            <!-- Profile Image Upload -->
-            <div class="space-y-4">
-              <Label>Profile Picture</Label>
-              <div class="flex items-center gap-4">
-                <Avatar class="h-20 w-20">
-                  <AvatarImage
-                    :src="
-                      imagePreview ||
-                      getFullImageUrl(userProfile.user?.profile_image)
-                    "
-                    :alt="editForm.name"
-                  />
-                  <AvatarFallback>{{ userInitials }}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <Label for="image-upload" class="cursor-pointer">
-                    <Button variant="outline" size="sm" as="span">
-                      <Camera class="h-4 w-4 mr-2" />
-                      Change Photo
-                    </Button>
-                  </Label>
-                  <input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    class="hidden"
-                    @change="handleImageUpload"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Form Fields -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="space-y-2">
-                <Label for="name">Full Name</Label>
-                <Input
-                  id="name"
-                  v-model="editForm.name"
-                  placeholder="Enter your full name"
-                />
-              </div>
-
-              <div class="space-y-2">
-                <Label for="email">Email</Label>
-                <Input
-                  id="email"
-                  v-model="editForm.email"
-                  type="email"
-                  placeholder="Enter your email"
-                />
-              </div>
-
-              <div class="space-y-2">
-                <Label for="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  v-model="editForm.phone"
-                  placeholder="Enter your phone number"
-                />
-              </div>
-
-              <div class="space-y-2">
-                <Label for="gender">Gender</Label>
-                <Select v-model="editForm.gender">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="L">Male</SelectItem>
-                    <SelectItem value="P">Female</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div class="space-y-2">
-                <Label for="date_of_birth">Date of Birth</Label>
-                <Input
-                  id="date_of_birth"
-                  v-model="editForm.date_of_birth"
-                  type="date"
-                />
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <Label for="address">Address</Label>
-              <Textarea
-                id="address"
-                v-model="editForm.address"
-                placeholder="Enter your address"
-                rows="2"
-              />
-            </div>
-
-            <div class="space-y-2">
-              <Label for="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                v-model="editForm.bio"
-                placeholder="Tell us about yourself"
-                rows="3"
-              />
-            </div>
-          </div>
-
+          <GridForm />
           <div class="flex justify-end gap-2">
             <Button
               @click="closeEditDialog"
@@ -606,6 +621,21 @@ onMounted(() => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Drawer>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Are you absolutely sure?</DrawerTitle>
+            <DrawerDescription>This action cannot be undone.</DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter>
+            <Button>Submit</Button>
+            <DrawerClose>
+              <Button variant="outline"> Cancel </Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   </RoleGuard>
 </template>
