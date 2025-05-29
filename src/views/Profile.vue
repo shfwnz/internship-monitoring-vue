@@ -76,7 +76,7 @@ const userProfile = ref({});
 const isLoading = ref(false);
 const isEditing = ref(false);
 const isEditOpen = ref(false);
-const isOpen = ref(false);
+const isEditClose = ref(false);
 
 // Form data for editing
 const editForm = ref({
@@ -163,7 +163,7 @@ const fetchProfile = async () => {
 };
 
 const openEdit = () => {
-  isOpen.value = true;
+  isEditOpen.value = true;
 };
 
 const closeEdit = () => {
@@ -176,8 +176,6 @@ const closeEdit = () => {
     phone: user.phone || '',
     address: user.address || '',
     gender: user.gender || '',
-    date_of_birth: user.date_of_birth || '',
-    bio: user.bio || '',
   };
   selectedImage.value = null;
   imagePreview.value = null;
@@ -196,31 +194,27 @@ const handleImageUpload = (event) => {
 };
 
 const saveProfile = async () => {
+  isLoading.value = true;
   try {
-    isLoading.value = true;
-
     const formData = new FormData();
     formData.append('name', editForm.value.name);
     formData.append('email', editForm.value.email);
     formData.append('phone', editForm.value.phone);
     formData.append('address', editForm.value.address);
     formData.append('gender', editForm.value.gender);
-    formData.append('date_of_birth', editForm.value.date_of_birth);
-    formData.append('bio', editForm.value.bio);
 
     if (selectedImage.value) {
       formData.append('profile_image', selectedImage.value);
     }
 
-    const response = await api.post('/profile/update', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const response = await api.post('/profile/update', formData, { headers });
 
     userProfile.value = response.data.data || {};
     toast.success('Profile updated successfully');
-    closeEditDialog();
+    closeEdit();
   } catch (error) {
     console.error('Error updating profile:', error);
     toast.error('Failed to update profile');
@@ -242,7 +236,7 @@ onMounted(() => {
 <template>
   <RoleGuard :allowed-roles="['teacher', 'student', 'admin']">
     <UseTemplate>
-      <div class="space-y-6 py-4">
+      <form class="grid items-start gap-4 px-4 w-full">
         <!-- Profile Image Upload -->
         <div class="space-y-4">
           <Label>Profile Picture</Label>
@@ -274,10 +268,9 @@ onMounted(() => {
             </div>
           </div>
         </div>
-
         <!-- Form Fields -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="space-y-2">
+        <div class="grid grid-cols-2 md:grid-cols-2 gap-4 w-full">
+          <div class="space-y-2 col-span-1">
             <Label for="name">Full Name</Label>
             <Input
               id="name"
@@ -286,7 +279,7 @@ onMounted(() => {
             />
           </div>
 
-          <div class="space-y-2">
+          <div class="space-y-2 col-span-1">
             <Label for="email">Email</Label>
             <Input
               id="email"
@@ -296,7 +289,7 @@ onMounted(() => {
             />
           </div>
 
-          <div class="space-y-2">
+          <div class="space-y-2 col-span-1">
             <Label for="phone">Phone Number</Label>
             <Input
               id="phone"
@@ -305,7 +298,7 @@ onMounted(() => {
             />
           </div>
 
-          <div class="space-y-2">
+          <div class="space-y-2 col-span-1">
             <Label for="gender">Gender</Label>
             <Select v-model="editForm.gender">
               <SelectTrigger>
@@ -325,10 +318,10 @@ onMounted(() => {
             id="address"
             v-model="editForm.address"
             placeholder="Enter your address"
-            rows="2"
+            rows="1"
           />
         </div>
-      </div>
+      </form>
     </UseTemplate>
 
     <div class="container mx-auto py-6 max-w-4xl">
@@ -596,7 +589,7 @@ onMounted(() => {
       </div>
 
       <!-- Desktop -->
-      <Dialog :open="isEditOpen" @update:open="isEditOpen = $event">
+      <Dialog v-if="isDesktop" v-model:open="isEditOpen">
         <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
@@ -606,15 +599,15 @@ onMounted(() => {
           </DialogHeader>
           <GridForm />
           <div class="flex justify-end gap-2">
-            <Button
-              @click="closeEditDialog"
-              variant="outline"
-              :disabled="isLoading"
-            >
+            <Button @click="closeEdit" variant="outline" :disabled="isLoading">
               <X class="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button @click="saveProfile" :disabled="isLoading">
+            <Button
+              @click="saveProfile"
+              :disabled="isLoading"
+              class="bg-amber-400 hover:bg-amber-500"
+            >
               <Save class="h-4 w-4 mr-2" />
               {{ isLoading ? 'Saving...' : 'Save Changes' }}
             </Button>
@@ -622,16 +615,35 @@ onMounted(() => {
         </DialogContent>
       </Dialog>
 
-      <Drawer>
+      <Drawer v-else v-model:open="isEditOpen">
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Are you absolutely sure?</DrawerTitle>
-            <DrawerDescription>This action cannot be undone.</DrawerDescription>
+            <DrawerTitle>Edit Profile</DrawerTitle>
+            <DrawerDescription
+              >Update your profile information and profile
+              picture.</DrawerDescription
+            >
           </DrawerHeader>
+          <GridForm />
           <DrawerFooter>
-            <Button>Submit</Button>
+            <Button
+              @click="saveProfile"
+              :disabled="isLoading"
+              class="bg-amber-400 hover:bg-amber-500"
+            >
+              <Save class="h-4 w-4 mr-2" />
+              {{ isLoading ? 'Saving...' : 'Save Changes' }}
+            </Button>
             <DrawerClose>
-              <Button variant="outline"> Cancel </Button>
+              <Button
+                @click="closeEdit"
+                variant="outline"
+                :disabled="isLoading"
+                class="w-full"
+              >
+                <X class="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
             </DrawerClose>
           </DrawerFooter>
         </DrawerContent>
