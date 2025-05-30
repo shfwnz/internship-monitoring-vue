@@ -67,7 +67,7 @@ import {
 } from '@/components/ui/select';
 import RoleGuard from '@/components/RoleGuard.vue';
 
-const LARAVEL_BASE_URL = 'http://127.0.0.1:8000';
+const LARAVEL_BASE_URL = 'http://192.168.1.6:8000';
 
 // Router
 const router = useRouter();
@@ -153,6 +153,18 @@ const fetchProfile = async () => {
 };
 
 const openEdit = () => {
+  // Populate form with current user data
+  const user = userProfile.value || {};
+  editForm.value = {
+    name: user.name || '',
+    email: user.email || '',
+    phone: user.phone || '',
+    address: user.address || '',
+    gender: user.gender || '',
+    nis: user.profile?.nis || '',
+    nip: user.profile?.nip || '',
+  };
+  console.log('Edit form data:', editForm.value);
   isEditOpen.value = true;
 };
 
@@ -166,8 +178,8 @@ const closeEdit = () => {
     phone: user.phone || '',
     address: user.address || '',
     gender: user.gender || '',
-    nis: user.profile.nis || '',
-    nip: user.profile.nip || '',
+    nis: user.profile?.nis || '',
+    nip: user.profile?.nip || '',
   };
   selectedImage.value = null;
   imagePreview.value = null;
@@ -196,22 +208,27 @@ const saveProfile = async () => {
     formData.append('gender', editForm.value.gender);
 
     let endPoint = '';
-    let id = userProfile.value.profile.id;
+    let id = userProfile.value.profile?.id;
+
+    console.log('Edit Form Before Send:', editForm.value);
 
     if (userProfile.value.roles[0] === 'student') {
       endPoint = `/students/${id}`;
 
       formData.append('nis', editForm.value.nis);
-      if (selectedImage.value) {
-        formData.append('image', selectedImage.value);
-      }
     } else if (userProfile.value.roles[0] === 'teacher') {
       endPoint = `/teachers/${id}`;
 
       formData.append('nip', editForm.value.nip);
-      if (selectedImage.value) {
-        formData.append('image', selectedImage.value);
-      }
+    }
+
+    if (selectedImage.value) {
+      formData.append('image', selectedImage.value);
+    }
+
+    console.log('Final FormData:');
+    for (var pair of formData.entries()) {
+      console.log(pair[0] + ': ' + pair[1]);
     }
 
     const token = localStorage.getItem('token');
@@ -219,15 +236,10 @@ const saveProfile = async () => {
 
     const response = await api.put(endPoint, formData, { headers });
 
-    if (userProfile.value.roles[0] === 'student') {
-      userProfile.value =
-        response.data.updated_data || response.data.data || {};
-    } else if (userProfile.value.roles[0] === 'teacher') {
-      userProfile.value =
-        response.data.updated_data || response.data.data || {};
-    } else {
-      userProfile.value = response.data.data || {};
-    }
+    console.log('Profile updated:', response.data);
+
+    await fetchProfile();
+
     toast.success('Profile updated successfully');
     closeEdit();
   } catch (error) {
@@ -251,7 +263,10 @@ onMounted(() => {
 <template>
   <RoleGuard :allowed-roles="['teacher', 'student', 'admin']">
     <UseTemplate>
-      <form class="grid items-start gap-4 px-4 w-full">
+      <form
+        @submit.prevent="saveProfile()"
+        class="grid items-start gap-4 px-4 w-full"
+      >
         <!-- Profile Image Upload -->
         <div class="space-y-4">
           <Label>Profile Picture</Label>
@@ -353,6 +368,8 @@ onMounted(() => {
             />
           </div>
         </div>
+
+        <button type="submit" class="hidden" />
       </form>
     </UseTemplate>
 
@@ -637,6 +654,7 @@ onMounted(() => {
               Cancel
             </Button>
             <Button
+              type="submit"
               @click="saveProfile"
               :disabled="isLoading"
               class="bg-amber-400 hover:bg-amber-500"
@@ -660,6 +678,7 @@ onMounted(() => {
           <GridForm />
           <DrawerFooter>
             <Button
+              type="submit"
               @click="saveProfile"
               :disabled="isLoading"
               class="bg-amber-400 hover:bg-amber-500"
