@@ -127,7 +127,12 @@ const getFullImageUrl = (imagePath) => {
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
-  return `${LARAVEL_BASE_URL}/storage/${imagePath}`;
+
+  const cleanPath = imagePath.replace(/^\/+/, '').replace(/\/+/g, '/');
+  const fullUrl = `${LARAVEL_BASE_URL}/storage/${cleanPath}`;
+
+  console.log('Full URL:', fullUrl);
+  return fullUrl;
 };
 
 // Methods
