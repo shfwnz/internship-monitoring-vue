@@ -4,6 +4,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
+import { toast } from 'vue-sonner';
 
 // Import Lucide icons
 import {
@@ -85,6 +86,8 @@ const editForm = ref({
   phone: '',
   address: '',
   gender: '',
+  nis: '',
+  nip: '',
 });
 
 // Responsive
@@ -97,27 +100,14 @@ const imagePreview = ref(null);
 
 // Computed properties
 const userInitials = computed(() => {
-  if (!userProfile.value.user?.name) return 'U';
-  return userProfile.value.user.name
+  if (!userProfile.value.name) return 'U';
+  return userProfile.value.name
     .split(' ')
     .map((word) => word.charAt(0))
     .join('')
     .toUpperCase()
     .slice(0, 2);
 });
-
-const formattedDate = (dateString) => {
-  if (!dateString) return 'Not specified';
-  try {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  } catch {
-    return dateString;
-  }
-};
 
 const genderDisplay = computed(() => {
   const gender = userProfile.value.gender;
@@ -169,13 +159,15 @@ const openEdit = () => {
 const closeEdit = () => {
   isEditOpen.value = false;
   // Reset form to original values
-  const user = userProfile.value.user || {};
+  const user = userProfile.value || {};
   editForm.value = {
     name: user.name || '',
     email: user.email || '',
     phone: user.phone || '',
     address: user.address || '',
     gender: user.gender || '',
+    nis: user.profile.nis || '',
+    nip: user.profile.nip || '',
   };
   selectedImage.value = null;
   imagePreview.value = null;
@@ -203,16 +195,39 @@ const saveProfile = async () => {
     formData.append('address', editForm.value.address);
     formData.append('gender', editForm.value.gender);
 
-    if (selectedImage.value) {
-      formData.append('profile_image', selectedImage.value);
+    let endPoint = '';
+    let id = userProfile.value.profile.id;
+
+    if (userProfile.value.roles[0] === 'student') {
+      endPoint = `/students/${id}`;
+
+      formData.append('nis', editForm.value.nis);
+      if (selectedImage.value) {
+        formData.append('image', selectedImage.value);
+      }
+    } else if (userProfile.value.roles[0] === 'teacher') {
+      endPoint = `/teachers/${id}`;
+
+      formData.append('nip', editForm.value.nip);
+      if (selectedImage.value) {
+        formData.append('image', selectedImage.value);
+      }
     }
 
     const token = localStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
 
-    const response = await api.post('/profile/update', formData, { headers });
+    const response = await api.put(endPoint, formData, { headers });
 
-    userProfile.value = response.data.data || {};
+    if (userProfile.value.roles[0] === 'student') {
+      userProfile.value =
+        response.data.updated_data || response.data.data || {};
+    } else if (userProfile.value.roles[0] === 'teacher') {
+      userProfile.value =
+        response.data.updated_data || response.data.data || {};
+    } else {
+      userProfile.value = response.data.data || {};
+    }
     toast.success('Profile updated successfully');
     closeEdit();
   } catch (error) {
@@ -243,10 +258,7 @@ onMounted(() => {
           <div class="flex items-center gap-4">
             <Avatar class="h-20 w-20">
               <AvatarImage
-                :src="
-                  imagePreview ||
-                  getFullImageUrl(userProfile.user?.profile_image)
-                "
+                :src="imagePreview || getFullImageUrl(userProfile.image)"
                 :alt="editForm.name"
               />
               <AvatarFallback>{{ userInitials }}</AvatarFallback>
@@ -448,7 +460,9 @@ onMounted(() => {
                     <div class="text-sm text-gray-500">Status</div>
                     <div class="font-medium">
                       <Badge variant="outline" class="w-fit">
-                        {{ userProfile.status ? 'Active' : 'Inactive' }}
+                        {{
+                          userProfile.profile?.status ? 'Active' : 'Inactive'
+                        }}
                       </Badge>
                     </div>
                   </div>
@@ -562,11 +576,8 @@ onMounted(() => {
                     v-if="userProfile.roles[0] === 'student'"
                   >
                     <div class="text-sm text-gray-500">Account Status</div>
-                    <Badge
-                      :variant="userProfile.status ? 'default' : 'secondary'"
-                      class="w-fit"
-                    >
-                      {{ userProfile.status ? 'Active' : 'Inactive' }}
+                    <Badge variant="outline" class="w-fit">
+                      {{ userProfile.profile?.status ? 'Active' : 'Inactive' }}
                     </Badge>
                   </div>
                 </div>
