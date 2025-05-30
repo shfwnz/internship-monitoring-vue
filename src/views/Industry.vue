@@ -3,7 +3,7 @@
 import { ref, computed, onMounted, watch } from "vue";
 
 // API
-import { api, LARAVEL_BASE_URL } from "@/api";
+import { api } from "@/api";
 
 // Third-party utilities
 import { toast } from "vue-sonner";
@@ -138,6 +138,15 @@ const fetchBusinessFields = async () => {
 
 const createIndustry = async () => {
   try {
+    const data = {
+      name: formData.value.industryName,
+      business_field_id: formData.value.selectedBusinessField,
+      email: formData.value.email,
+      phone: formData.value.phone,
+      address: formData.value.address,
+      website: formData.value.website,
+    }
+    
     const requiredFields = [
       "industryName",
       "selectedBusinessField",
@@ -156,21 +165,27 @@ const createIndustry = async () => {
       return;
     }
 
-    const response = await api.post("/industries", {
-      name: formData.value.industryName,
-      business_field_id: formData.value.selectedBusinessField,
-      email: formData.value.email,
-      phone: formData.value.phone,
-      address: formData.value.address,
-      website: formData.value.website,
-    });
+    const response = await api.post("/industries", data);
+    console.log(response);
 
     toast.success("Successfully added industry");
     resetForm();
     isOpen.value = false;
     await fetchIndustries();
   } catch (error) {
-    toast.error("Failed to add industry");
+    if (error.response?.status === 422) {
+      const errors = error.response.data?.errors || 'Failed to add industry';
+      let errorMessage = 'Validation failed: ';
+
+      Object.keys(errors).forEach((key) => {
+        errorMessage += `${key}: ${errors[key].join(', ')}. `;
+      });
+
+      toast.error(errorMessage);
+    } else {
+      console.error(error);
+      toast.error("Failed to add industry");
+    }
   }
 };
 
