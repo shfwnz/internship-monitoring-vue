@@ -231,7 +231,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="container mx-auto py-6 max-w-4xl flex flex-col min-h-screen">
+  <div class="container mx-auto py-6 max-w-4xl flex flex-col max-h-screen">
     <!-- Form -->
     <UseTemplate>
       <form @submit.prevent="createIndustry()" class="grid items-start gap-4 px-4 w-full">
