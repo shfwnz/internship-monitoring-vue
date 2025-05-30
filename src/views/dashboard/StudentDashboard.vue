@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
 import { FileText, Plus, ChevronRight, Info } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
-import api from '@/api';
+import { api, LARAVEL_BASE_URL } from '@/api';
 
 // UI Components
 import {

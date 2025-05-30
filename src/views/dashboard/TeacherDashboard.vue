@@ -8,7 +8,7 @@ import { useMediaQuery } from '@vueuse/core';
 import { Minimize, Maximize } from 'lucide-vue-next';
 
 // Import API
-import api from '@/api';
+import { api, LARAVEL_BASE_URL } from '@/api';
 
 // Import UI components
 import { Input } from '@/components/ui/input';
@@ -39,8 +39,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-
-const LARAVEL_BASE_URL = 'http://127.0.0.1:8000';
 
 // State
 const internshipList = ref([]);

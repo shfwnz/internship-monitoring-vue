@@ -7,7 +7,7 @@ import { useRouter } from 'vue-router';
 import { toast, Toaster } from 'vue-sonner';
 
 // API
-import api from '@/api';
+import { api, LARAVEL_BASE_URL } from '@/api';
 
 // UI Components
 import { Button } from '@/components/ui/button';

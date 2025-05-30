@@ -7,7 +7,7 @@ import { set, useMediaQuery } from '@vueuse/core';
 import { toast } from 'vue-sonner';
 import { Moon, Menu, Sun, UserCircle } from 'lucide-vue-next';
 
-import api from '@/api';
+import { api, LARAVEL_BASE_URL } from '@/api';
 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';

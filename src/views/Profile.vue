@@ -23,7 +23,7 @@ import {
 } from 'lucide-vue-next';
 
 // Import API
-import api from '@/api';
+import { api, LARAVEL_BASE_URL } from '@/api';
 
 // Import UI components
 import { Input } from '@/components/ui/input';
@@ -67,7 +67,6 @@ import {
 } from '@/components/ui/select';
 import RoleGuard from '@/components/RoleGuard.vue';
 
-const LARAVEL_BASE_URL = 'http://192.168.1.6:8000';
 
 // Router
 const router = useRouter();
@@ -234,7 +233,8 @@ const saveProfile = async () => {
     const token = localStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
 
-    const response = await api.put(endPoint, formData, { headers });
+    formData.append('_method', 'PUT');
+    const response = await api.post(endPoint, formData, { headers });
 
     console.log('Profile updated:', response.data);
 
@@ -395,7 +395,7 @@ onMounted(() => {
                 <Avatar class="h-24 w-24 md:h-32 md:w-32">
                   <AvatarImage
                     :src="getFullImageUrl(userProfile.image)"
-                    :alt="userProfile.user?.name"
+                    :alt="userProfile.name"
                   />
                   <AvatarFallback class="text-2xl">{{
                     userInitials

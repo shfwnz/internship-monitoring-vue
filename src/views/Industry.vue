@@ -1,19 +1,19 @@
 <script setup>
 // Vue core
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from "vue";
 
 // API
-import api from '@/api';
+import { api, LARAVEL_BASE_URL } from "@/api";
 
 // Third-party utilities
-import { toast } from 'vue-sonner';
-import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
+import { toast } from "vue-sonner";
+import { createReusableTemplate, useMediaQuery } from "@vueuse/core";
 
 // UI Components
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -21,7 +21,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -29,7 +29,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Drawer,
   DrawerClose,
@@ -48,7 +48,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from '@/components/ui/drawer';
+} from "@/components/ui/drawer";
 import {
   Pagination,
   PaginationEllipsis,
@@ -57,7 +57,7 @@ import {
   PaginationItem,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination';
+} from "@/components/ui/pagination";
 import {
   Select,
   SelectContent,
@@ -66,7 +66,7 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
 // Reactive data
 const industryList = ref([]);
@@ -74,17 +74,17 @@ const businessFields = ref([]);
 
 // Form data
 const formData = ref({
-  industryName: '',
-  selectedBusinessField: '',
-  email: '',
-  phone: '',
-  address: '',
-  website: '',
+  industryName: "",
+  selectedBusinessField: "",
+  email: "",
+  phone: "",
+  address: "",
+  website: "",
 });
 
 // UI states
 const isOpen = ref(false);
-const searchQuery = ref('');
+const searchQuery = ref("");
 
 // Pagination
 const currentPage = ref(1);
@@ -92,7 +92,7 @@ const itemsPerPage = ref(6);
 
 // Responsive
 const [UseTemplate, GridForm] = createReusableTemplate();
-const isDesktop = useMediaQuery('(min-width: 768px)');
+const isDesktop = useMediaQuery("(min-width: 768px)");
 
 // Computed properties
 const filteredIndustries = computed(() => {
@@ -120,31 +120,31 @@ const canNextPage = computed(() => currentPage.value < totalPages.value);
 // API functions
 const fetchIndustries = async () => {
   try {
-    const response = await api.get('/industries');
+    const response = await api.get("/industries");
     industryList.value = response.data.all_data;
   } catch (error) {
-    toast.error('Failed to fetch industries');
+    toast.error("Failed to fetch industries");
   }
 };
 
 const fetchBusinessFields = async () => {
   try {
-    const response = await api.get('/business-fields');
+    const response = await api.get("/business-fields");
     businessFields.value = response.data.data;
   } catch (error) {
-    toast.error('Failed to fetch business fields');
+    toast.error("Failed to fetch business fields");
   }
 };
 
 const createIndustry = async () => {
   try {
     const requiredFields = [
-      'industryName',
-      'selectedBusinessField',
-      'email',
-      'phone',
-      'address',
-      'website',
+      "industryName",
+      "selectedBusinessField",
+      "email",
+      "phone",
+      "address",
+      "website",
     ];
 
     const missingFields = requiredFields.filter(
@@ -152,11 +152,11 @@ const createIndustry = async () => {
     );
 
     if (missingFields.length > 0) {
-      toast.warning('Please fill in all fields');
+      toast.warning("Please fill in all fields");
       return;
     }
 
-    const response = await api.post('/industries', {
+    const response = await api.post("/industries", {
       name: formData.value.industryName,
       business_field_id: formData.value.selectedBusinessField,
       email: formData.value.email,
@@ -165,12 +165,12 @@ const createIndustry = async () => {
       website: formData.value.website,
     });
 
-    toast.success('Successfully added industry');
+    toast.success("Successfully added industry");
     resetForm();
     isOpen.value = false;
     await fetchIndustries();
   } catch (error) {
-    toast.error('Failed to add industry');
+    toast.error("Failed to add industry");
   }
 };
 
@@ -194,12 +194,12 @@ const nextPage = () => {
 // Utility functions
 const resetForm = () => {
   formData.value = {
-    industryName: '',
-    selectedBusinessField: '',
-    email: '',
-    phone: '',
-    address: '',
-    website: '',
+    industryName: "",
+    selectedBusinessField: "",
+    email: "",
+    phone: "",
+    address: "",
+    website: "",
   };
 };
 
@@ -219,38 +219,22 @@ onMounted(() => {
   <div class="container mx-auto py-6 max-w-4xl flex flex-col min-h-screen">
     <!-- Form -->
     <UseTemplate>
-      <form
-        @submit.prevent="createIndustry()"
-        class="grid items-start gap-4 px-4 w-full"
-      >
+      <form @submit.prevent="createIndustry()" class="grid items-start gap-4 px-4 w-full">
         <div class="grid gap-2">
           <Label for="name" class="font-medium">Industry Name</Label>
-          <Input
-            v-model="formData.industryName"
-            id="name"
-            placeholder="Enter industry name"
-          />
+          <Input v-model="formData.industryName" id="name" placeholder="Enter industry name" />
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div class="grid gap-2">
-            <Label for="business_field" class="font-medium"
-              >Business Field</Label
-            >
-            <Select
-              v-model="formData.selectedBusinessField"
-              id="business_field"
-            >
+            <Label for="business_field" class="font-medium">Business Field</Label>
+            <Select v-model="formData.selectedBusinessField" id="business_field">
               <SelectTrigger class="w-full">
                 <SelectValue placeholder="Select a business field" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Business Field</SelectLabel>
-                  <SelectItem
-                    v-for="field in businessFields"
-                    :key="field.id"
-                    :value="field.id"
-                  >
+                  <SelectItem v-for="field in businessFields" :key="field.id" :value="field.id">
                     <SelectItemText>{{ field.name }}</SelectItemText>
                   </SelectItem>
                 </SelectGroup>
@@ -259,39 +243,22 @@ onMounted(() => {
           </div>
           <div class="grid gap-2">
             <Label for="website" class="font-medium">Website</Label>
-            <Input
-              v-model="formData.website"
-              id="website"
-              placeholder="https://example.com"
-            />
+            <Input v-model="formData.website" id="website" placeholder="https://example.com" />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div class="grid gap-2">
             <Label for="email" class="font-medium">Email</Label>
-            <Input
-              v-model="formData.email"
-              id="email"
-              type="email"
-              placeholder="contact@example.com"
-            />
+            <Input v-model="formData.email" id="email" type="email" placeholder="contact@example.com" />
           </div>
           <div class="grid gap-2">
             <Label for="phone" class="font-medium">Phone</Label>
-            <Input
-              v-model="formData.phone"
-              id="phone"
-              placeholder="+62 xxx xxxx xxxx"
-            />
+            <Input v-model="formData.phone" id="phone" placeholder="+62 xxx xxxx xxxx" />
           </div>
         </div>
         <div class="grid gap-2">
           <Label for="address" class="font-medium">Address</Label>
-          <Input
-            v-model="formData.address"
-            id="address"
-            placeholder="Full address"
-          />
+          <Input v-model="formData.address" id="address" placeholder="Full address" />
         </div>
         <Button type="submit" class="bg-amber-400 hover:bg-amber-500">
           Submit Industry
@@ -304,17 +271,11 @@ onMounted(() => {
       <Card class="col-span-1 md:col-span-3">
         <CardHeader class="flex flex-col justify-center items-center">
           <CardTitle class="text-2xl capitalize">Industry List</CardTitle>
-          <CardDescription class="text-sm lowercase"
-            >A simple, structured list of industries for your
-            convenience</CardDescription
-          >
+          <CardDescription class="text-sm lowercase">A simple, structured list of industries for your
+            convenience</CardDescription>
         </CardHeader>
         <CardContent class="flex-1 flex flex-col justify-start">
-          <Input
-            v-model="searchQuery"
-            class="max-w-sm my-2"
-            placeholder="Find Industry..."
-          />
+          <Input v-model="searchQuery" class="max-w-sm my-2" placeholder="Find Industry..." />
           <Table>
             <TableHeader>
               <TableRow>
@@ -327,10 +288,7 @@ onMounted(() => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow
-                v-for="industry in paginatedIndustries"
-                :key="industry.id || industry.name"
-              >
+              <TableRow v-for="industry in paginatedIndustries" :key="industry.id || industry.name">
                 <TableCell class="font-medium">
                   {{ industry.name }}
                 </TableCell>
@@ -366,16 +324,11 @@ onMounted(() => {
             <!-- Mobile -->
             <div class="flex md:hidden gap-2">
               <PaginationItem>
-                <PaginationPrevious
-                  @click="previousPage"
-                  :disabled="!canPreviousPage"
-                />
+                <PaginationPrevious @click="previousPage" :disabled="!canPreviousPage" />
               </PaginationItem>
 
               <div class="flex items-center mx-2">
-                <span class="text-sm"
-                  >{{ currentPage }} / {{ totalPages }}</span
-                >
+                <span class="text-sm">{{ currentPage }} / {{ totalPages }}</span>
               </div>
 
               <PaginationItem>
@@ -384,21 +337,13 @@ onMounted(() => {
             </div>
 
             <!-- Desktop -->
-            <div
-              class="hidden md:grid md:grid-cols-4 md:gap-4 md:items-center md:w-full"
-            >
+            <div class="hidden md:grid md:grid-cols-4 md:gap-4 md:items-center md:w-full">
               <div class="flex gap-12 justify-end">
                 <PaginationItem v-if="totalPages > 2">
-                  <PaginationFirst
-                    @click="goToPage(1)"
-                    :disabled="currentPage === 1"
-                  />
+                  <PaginationFirst @click="goToPage(1)" :disabled="currentPage === 1" />
                 </PaginationItem>
                 <PaginationItem>
-                  <PaginationPrevious
-                    @click="previousPage"
-                    :disabled="!canPreviousPage"
-                  />
+                  <PaginationPrevious @click="previousPage" :disabled="!canPreviousPage" />
                 </PaginationItem>
               </div>
 
@@ -406,29 +351,21 @@ onMounted(() => {
               <div class="col-span-2 flex justify-center space-x-2">
                 <template v-for="page in totalPages" :key="page">
                   <!-- Show first page, last page, and pages around current page -->
-                  <PaginationItem
-                    v-if="
-                      page === 1 ||
-                      page === totalPages ||
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-                    "
-                  >
-                    <Button
-                      variant="outline"
-                      :class="{ 'bg-amber-100': currentPage === page }"
-                      @click="goToPage(page)"
-                    >
+                  <PaginationItem v-if="
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ">
+                    <Button variant="outline" :class="{ 'bg-amber-100': currentPage === page }" @click="goToPage(page)">
                       {{ page }}
                     </Button>
                   </PaginationItem>
 
                   <!-- Show ellipsis where needed -->
-                  <PaginationItem
-                    v-else-if="
-                      (page === 2 && currentPage > 3) ||
-                      (page === totalPages - 1 && currentPage < totalPages - 2)
-                    "
-                  >
+                  <PaginationItem v-else-if="
+                    (page === 2 && currentPage > 3) ||
+                    (page === totalPages - 1 && currentPage < totalPages - 2)
+                  ">
                     <PaginationEllipsis />
                   </PaginationItem>
                 </template>
@@ -439,10 +376,7 @@ onMounted(() => {
                   <PaginationNext @click="nextPage" :disabled="!canNextPage" />
                 </PaginationItem>
                 <PaginationItem v-if="totalPages > 2">
-                  <PaginationLast
-                    @click="goToPage(totalPages)"
-                    :disabled="currentPage === totalPages"
-                  />
+                  <PaginationLast @click="goToPage(totalPages)" :disabled="currentPage === totalPages" />
                 </PaginationItem>
               </div>
             </div>
@@ -505,11 +439,7 @@ onMounted(() => {
               </div>
               <DrawerFooter class="pt-2">
                 <DrawerClose as-child>
-                  <Button
-                    variant="outline"
-                    class="border-amber-300 hover:bg-amber-50"
-                    @click="resetForm"
-                  >
+                  <Button variant="outline" class="border-amber-300 hover:bg-amber-50" @click="resetForm">
                     Cancel
                   </Button>
                 </DrawerClose>
@@ -520,9 +450,7 @@ onMounted(() => {
 
         <CardFooter class="border-t flex justify-between">
           <span class="text-sm">Help us improve our industry database</span>
-          <span class="text-sm text-right"
-            >Thank you for your contribution</span
-          >
+          <span class="text-sm text-right">Thank you for your contribution</span>
         </CardFooter>
       </Card>
     </div>
