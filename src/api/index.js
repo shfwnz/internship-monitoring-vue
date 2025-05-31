@@ -6,4 +6,8 @@ const api = axios.create({
 
 const LARAVEL_BASE_URL = 'http://192.168.1.6:8000';
 
-export { api, LARAVEL_BASE_URL };
+const getToken = () => {
+  return localStorage.getItem('token');
+};
+
+export { api, LARAVEL_BASE_URL, getToken };

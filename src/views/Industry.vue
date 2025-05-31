@@ -3,17 +3,19 @@
 import { ref, computed, onMounted, watch } from "vue";
 
 // API
-import { api } from "@/api";
+import { api, getToken } from "@/api";
 
 // Third-party utilities
 import { toast } from "vue-sonner";
 import { createReusableTemplate, useMediaQuery } from "@vueuse/core";
+import { X, Save } from "lucide-vue-next";
 
 // UI Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -68,6 +70,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+
 // Reactive data
 const industryList = ref([]);
 const businessFields = ref([]);
@@ -120,7 +123,10 @@ const canNextPage = computed(() => currentPage.value < totalPages.value);
 // API functions
 const fetchIndustries = async () => {
   try {
-    const response = await api.get("/industries");
+    const token = getToken();
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const response = await api.get("/industries", { headers });
     industryList.value = response.data.all_data;
   } catch (error) {
     toast.error("Failed to fetch industries");
@@ -129,7 +135,10 @@ const fetchIndustries = async () => {
 
 const fetchBusinessFields = async () => {
   try {
-    const response = await api.get("/business-fields");
+    const token = getToken();
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const response = await api.get("/business-fields", { headers });
     businessFields.value = response.data.data;
   } catch (error) {
     toast.error("Failed to fetch business fields");
@@ -146,7 +155,7 @@ const createIndustry = async () => {
       address: formData.value.address,
       website: formData.value.website,
     }
-    
+
     const requiredFields = [
       "industryName",
       "selectedBusinessField",
@@ -165,8 +174,10 @@ const createIndustry = async () => {
       return;
     }
 
-    const response = await api.post("/industries", data);
-    console.log(response);
+    const token = getToken();
+    const headers = { Authorization: `Bearer ${token}` };
+
+    await api.post("/industries", data, { headers });
 
     toast.success("Successfully added industry");
     resetForm();
@@ -216,6 +227,7 @@ const resetForm = () => {
     address: "",
     website: "",
   };
+  isOpen.value = false;
 };
 
 // Watchers
@@ -273,11 +285,8 @@ onMounted(() => {
         </div>
         <div class="grid gap-2">
           <Label for="address" class="font-medium">Address</Label>
-          <Input v-model="formData.address" id="address" placeholder="Full address" />
+          <Textarea v-model="formData.address" id="address" placeholder="Full address" rows="2" />
         </div>
-        <Button type="submit" class="bg-amber-400 hover:bg-amber-500">
-          Submit Industry
-        </Button>
       </form>
     </UseTemplate>
 
@@ -285,7 +294,7 @@ onMounted(() => {
       <!-- Industry List -->
       <Card class="col-span-1 md:col-span-3">
         <CardHeader class="flex flex-col justify-center items-center">
-          <CardTitle class="text-2xl capitalize">Industry List</CardTitle>
+          <CardTitle class="text-xl capitalize">Industry List</CardTitle>
           <CardDescription class="text-sm lowercase">A simple, structured list of industries for your
             convenience</CardDescription>
         </CardHeader>
@@ -402,10 +411,10 @@ onMounted(() => {
       <!-- add industry form -->
       <Card class="justify-center">
         <CardHeader>
-          <CardTitle class="text-2xl capitalize font-bold">
+          <CardTitle class="text-xl capitalize font-bold">
             Didn't find your industry?
           </CardTitle>
-          <CardDescription class="text-sm">
+          <CardDescription class="text-sm text-justify">
             Tell us what you're looking for so we can better serve your needs
           </CardDescription>
         </CardHeader>
@@ -422,13 +431,25 @@ onMounted(() => {
             </DialogTrigger>
             <DialogContent class="sm:max-w-[500px]">
               <DialogHeader class="border-b-2 pb-4">
-                <DialogTitle class="text-2xl">Add New Industry</DialogTitle>
+                <DialogTitle class="text-xl">Add New Industry</DialogTitle>
                 <DialogDescription>
                   Please provide information about the industry you're looking
                   for.
                 </DialogDescription>
               </DialogHeader>
               <GridForm />
+              <div class="flex justify-end gap-2">
+                <Button @click="resetForm" variant="outline" :disabled="isLoading"
+                  class="border-amber-300 hover:bg-amber-50">
+                  <X class="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button type="submit" @click="createIndustry" :disabled="isLoading"
+                  class="bg-amber-400 hover:bg-amber-500">
+                  <Save class="h-4 w-4 mr-2" />
+                  {{ isLoading ? 'Saving...' : 'Submit Industry' }}
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
 
@@ -443,18 +464,22 @@ onMounted(() => {
 
             <DrawerContent class="border-t-amber-400 border-t-4">
               <DrawerHeader class="text-left border-b border-amber-200 pb-4">
-                <DrawerTitle class="text-2xl">Add New Industry</DrawerTitle>
+                <DrawerTitle class="text-xl">Add New Industry</DrawerTitle>
                 <DrawerDescription>
                   Please provide information about the industry you're looking
                   for.
                 </DrawerDescription>
               </DrawerHeader>
-              <div class="px-4 py-2">
-                <GridForm />
-              </div>
-              <DrawerFooter class="pt-2">
-                <DrawerClose as-child>
-                  <Button variant="outline" class="border-amber-300 hover:bg-amber-50" @click="resetForm">
+              <GridForm />
+              <DrawerFooter>
+                <Button type="submit" @click="createIndustry" :disabled="isLoading"
+                  class="bg-amber-400 hover:bg-amber-500">
+                  <Save class="h-4 w-4 mr-2" />
+                  {{ isLoading ? 'Saving...' : 'Submit Industry' }}
+                </Button>
+                <DrawerClose>
+                  <Button @click="resetForm" variant="outline" :disabled="isLoading" class="w-full">
+                    <X class="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
                 </DrawerClose>
@@ -464,7 +489,7 @@ onMounted(() => {
         </CardContent>
 
         <CardFooter class="border-t flex justify-between">
-          <span class="text-sm">Help us improve our industry database</span>
+          <span class="text-sm">Help us improve our database</span>
           <span class="text-sm text-right">Thank you for your contribution</span>
         </CardFooter>
       </Card>
