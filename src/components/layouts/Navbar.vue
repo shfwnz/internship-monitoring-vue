@@ -1,17 +1,22 @@
 <script setup>
-// IMPORTS
+// Core Vue imports
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { set, useMediaQuery } from '@vueuse/core';
+// API and utilities
+import { api, getToken, LARAVEL_BASE_URL } from '@/api';
+import { useMediaQuery } from '@vueuse/core';
 import { toast } from 'vue-sonner';
+
+// Icons
 import { Moon, Menu, Sun, UserCircle } from 'lucide-vue-next';
 
-import { api, LARAVEL_BASE_URL } from '@/api';
-
+// UI Components - Basic
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+// UI Components - Dropdown
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +25,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
+// UI Components - Drawer
 import {
   Drawer,
   DrawerClose,
@@ -116,7 +123,7 @@ const fetchUser = async () => {
     }
 
     // Fetch fresh data from API
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const headers = { Authorization: `Bearer ${token}` };
     const response = await api.get('/me', { headers });
 
@@ -145,6 +152,19 @@ const fetchUser = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const getFullImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+
+  const cleanPath = imagePath.replace(/^\/+/, '').replace(/\/+/g, '/');
+  const fullUrl = `${LARAVEL_BASE_URL}/storage/${cleanPath}`;
+
+  console.log('Full URL:', fullUrl);
+  return fullUrl;
 };
 
 const logout = async (isSessionExpired = false) => {
@@ -256,8 +276,7 @@ onMounted(() => {
             <span class="max-w-25 truncate">{{ userDisplayName }}</span>
             <Avatar>
               <AvatarImage
-                v-if="currentUser?.avatar_url"
-                :src="currentUser.avatar_url"
+                :src="getFullImageUrl(currentUser.image)"
                 :alt="userDisplayName"
               />
               <AvatarFallback>{{ userInitials }}</AvatarFallback>
@@ -268,8 +287,7 @@ onMounted(() => {
               <DropdownMenuItem class="flex items-center gap-2">
                 <Avatar>
                   <AvatarImage
-                    v-if="currentUser?.avatar_url"
-                    :src="currentUser.avatar_url"
+                    :src="getFullImageUrl(currentUser.image)"
                     :alt="userDisplayName"
                   />
                   <AvatarFallback>{{ userInitials }}</AvatarFallback>
@@ -309,8 +327,7 @@ onMounted(() => {
             <span class="max-w-20 truncate">{{ userDisplayName }}</span>
             <Avatar>
               <AvatarImage
-                v-if="currentUser?.avatar_url"
-                :src="currentUser.avatar_url"
+                :src="getFullImageUrl(currentUser.image)"
                 :alt="userDisplayName"
               />
               <AvatarFallback>{{ userInitials }}</AvatarFallback>
@@ -326,8 +343,7 @@ onMounted(() => {
                     <div class="flex items-center gap-2">
                       <Avatar>
                         <AvatarImage
-                          v-if="currentUser?.avatar_url"
-                          :src="currentUser.avatar_url"
+                          :src="getFullImageUrl(currentUser.image)"
                           :alt="userDisplayName"
                         />
                         <AvatarFallback>{{ userInitials }}</AvatarFallback>

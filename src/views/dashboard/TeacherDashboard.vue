@@ -8,12 +8,11 @@ import { useMediaQuery } from '@vueuse/core';
 import { Minimize, Maximize } from 'lucide-vue-next';
 
 // Import API
-import { api, LARAVEL_BASE_URL } from '@/api';
+import { api, LARAVEL_BASE_URL, getToken } from '@/api';
 
 // Import UI components
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
@@ -41,6 +40,7 @@ import {
 } from '@/components/ui/pagination';
 
 // State
+const router = useRouter();
 const internshipList = ref([]);
 const studentList = ref([]);
 const isLoading = ref(false);
@@ -162,7 +162,10 @@ const nextPageStudent = () => {
 const fetchInternships = async () => {
   isLoading.value = true;
   try {
-    const response = await api.get('/internships');
+    const token = getToken();
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const response = await api.get('/internships', { headers });
     internshipList.value = response.data.all_data;
     console.log('Fetched internships:', internshipList.value);
   } catch (error) {
@@ -176,7 +179,10 @@ const fetchInternships = async () => {
 const fetchStudents = async () => {
   isLoading.value = true;
   try {
-    const response = await api.get('/students');
+    const token = getToken();
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const response = await api.get('/students', { headers });
     studentList.value = response.data.all_data;
     console.log('Fetched students:', studentList.value);
   } catch (error) {

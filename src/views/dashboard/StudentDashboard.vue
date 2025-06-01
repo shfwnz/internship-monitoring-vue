@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core';
 import { FileText, Plus, ChevronRight, Info } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
-import { api, LARAVEL_BASE_URL } from '@/api';
+import { api, getToken } from '@/api';
 
 // UI Components
 import {
@@ -99,7 +99,7 @@ const progressPercentage = computed(() => {
 // API functions
 const fetchUserData = async () => {
   try {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const headers = { Authorization: `Bearer ${token}` };
     const response = await api.get('/me', { headers });
 
@@ -117,7 +117,7 @@ const fetchInternships = async () => {
   error.value = null;
 
   try {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const headers = { Authorization: `Bearer ${token}` };
     const response = await api.get('/internships/me', { headers });
 
@@ -144,7 +144,10 @@ const fetchInternships = async () => {
 
 const fetchIndustries = async () => {
   try {
-    const response = await api.get('/industries');
+    const token = getToken();
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const response = await api.get('/industries', { headers });
     industries.value = response.data.all_data;
   } catch (error) {
     toast.error('Failed to fetch industries');
@@ -168,7 +171,7 @@ const postInternship = async () => {
       form.append('file', formData.value.file);
     }
 
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const headers = { Authorization: `Bearer ${token}` };
 
     const response = await api.post('/internships', form, { headers });

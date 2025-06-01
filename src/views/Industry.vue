@@ -88,6 +88,7 @@ const formData = ref({
 // UI states
 const isOpen = ref(false);
 const searchQuery = ref("");
+const isLoading = ref(false);
 
 // Pagination
 const currentPage = ref(1);
@@ -123,10 +124,7 @@ const canNextPage = computed(() => currentPage.value < totalPages.value);
 // API functions
 const fetchIndustries = async () => {
   try {
-    const token = getToken();
-    const headers = { Authorization: `Bearer ${token}` };
-
-    const response = await api.get("/industries", { headers });
+    const response = await api.get("/industries");
     industryList.value = response.data.all_data;
   } catch (error) {
     toast.error("Failed to fetch industries");
@@ -135,10 +133,7 @@ const fetchIndustries = async () => {
 
 const fetchBusinessFields = async () => {
   try {
-    const token = getToken();
-    const headers = { Authorization: `Bearer ${token}` };
-
-    const response = await api.get("/business-fields", { headers });
+    const response = await api.get("/business-fields");
     businessFields.value = response.data.data;
   } catch (error) {
     toast.error("Failed to fetch business fields");
@@ -147,6 +142,7 @@ const fetchBusinessFields = async () => {
 
 const createIndustry = async () => {
   try {
+    isLoading.value = true;
     const data = {
       name: formData.value.industryName,
       business_field_id: formData.value.selectedBusinessField,
@@ -174,10 +170,7 @@ const createIndustry = async () => {
       return;
     }
 
-    const token = getToken();
-    const headers = { Authorization: `Bearer ${token}` };
-
-    await api.post("/industries", data, { headers });
+    await api.post("/industries", data);
 
     toast.success("Successfully added industry");
     resetForm();
@@ -187,16 +180,16 @@ const createIndustry = async () => {
     if (error.response?.status === 422) {
       const errors = error.response.data?.errors || 'Failed to add industry';
       let errorMessage = 'Validation failed: ';
-
       Object.keys(errors).forEach((key) => {
         errorMessage += `${key}: ${errors[key].join(', ')}. `;
       });
-
       toast.error(errorMessage);
     } else {
       console.error(error);
       toast.error("Failed to add industry");
     }
+  } finally {
+    isLoading.value = false;
   }
 };
 
