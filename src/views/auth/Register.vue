@@ -4,10 +4,10 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 // Third party
-import { toast, Toaster } from 'vue-sonner';
+import { toast } from 'vue-sonner';
 
 // API
-import { api, LARAVEL_BASE_URL } from '@/api';
+import { api } from '@/api';
 
 // UI Components
 import { Button } from '@/components/ui/button';
