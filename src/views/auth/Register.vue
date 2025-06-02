@@ -67,6 +67,7 @@ const handleSubmit = async () => {
     }
 
     const response = await api.post('/register', payload);
+    console.log(response);
 
     if (response.data.success) {
       toast.success('Registration successful');
@@ -75,6 +76,7 @@ const handleSubmit = async () => {
       }, 1500);
     } else {
       toast.error(response.data.message || 'Registration failed');
+      console.log(response.data.message);
     }
   } catch (error) {
     toast.error(error.response?.data?.message || 'Registration failed');

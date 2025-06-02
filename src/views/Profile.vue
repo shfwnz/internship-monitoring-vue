@@ -189,6 +189,11 @@ const closeEdit = () => {
   imagePreview.value = null;
 };
 
+const validatePhone = (phone) => {
+  const phoneRegex = /^(?:\+62)8[1-9][0-9]{7,10}$/;
+  return phoneRegex.test(phone.replace(/\s+/g, ''));
+};
+
 const handleImageUpload = (event) => {
   const file = event.target.files[0];
   if (file) {
@@ -204,6 +209,12 @@ const handleImageUpload = (event) => {
 const saveProfile = async () => {
   isLoading.value = true;
   try {
+    if (!validatePhone(editForm.value.phone)) {
+      toast.error('please enter a valid phone number');
+      isLoading.value = false;
+      return;
+    }
+
     const formData = new FormData();
     formData.append('name', editForm.value.name);
     formData.append('email', editForm.value.email);

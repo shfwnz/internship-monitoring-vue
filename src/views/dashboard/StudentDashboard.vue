@@ -177,6 +177,10 @@ const postInternship = async () => {
     const response = await api.post('/internships', form, { headers });
 
     toast.success('Internship posted successfully');
+    setTimeout(() => {
+      toast.success('please refresh the page');
+    }, 1500);
+
     resetForm();
     await fetchInternships();
     isOpen.value = false;
@@ -240,47 +244,54 @@ const handleFileChange = (event) => {
 const handleSubmit = () => {
   error.value = null;
 
-  // Form validation
-  if (!formData.value.selectedIndustry) {
-    toast.error('Please select an industry');
-    return;
+  try {
+    // Form validation
+    if (!formData.value.selectedIndustry) {
+      toast.error('Please select an industry');
+      return;
+    }
+
+    if (!formData.value.start_date || !formData.value.end_date) {
+      toast.error('Please select start and end dates');
+      return;
+    }
+
+    // Date validation
+    const startDate = new Date(formData.value.start_date);
+    const endDate = new Date(formData.value.end_date);
+
+    if (endDate <= startDate) {
+      toast.error('End date must be after start date');
+      return;
+    }
+
+    // Calculate duration in days
+    const durationInDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+    if(durationInDays < 90) {
+      toast.error('Internship duration must be at least 90 days');
+      return;
+    }
+
+    if (!formData.value.file) {
+      toast.error('Please upload a cover letter');
+      return;
+    }
+
+    // Final file validation
+    if (formData.value.file.size > 2 * 1024 * 1024) {
+      toast.error('File size must be less than 2MB');
+      return;
+    }
+
+    if (formData.value.file.type !== 'application/pdf') {
+      toast.error('Only PDF files are allowed');
+      return;
+    }
+
+    postInternship();
+  } catch (error) {
+    toast.error(error.response.data.message);
   }
-
-  if (!formData.value.start_date || !formData.value.end_date) {
-    toast.error('Please select start and end dates');
-    return;
-  }
-
-  // Date validation
-  const startDate = new Date(formData.value.start_date);
-  const endDate = new Date(formData.value.end_date);
-
-  if (endDate <= startDate) {
-    toast.error('End date must be after start date');
-    return;
-  }
-
-  if (!formData.value.file) {
-    toast.error('Please upload a cover letter');
-    return;
-  }
-
-  // Final file validation
-  if (formData.value.file.size > 2 * 1024 * 1024) {
-    toast.error('File size must be less than 2MB');
-    return;
-  }
-
-  if (formData.value.file.type !== 'application/pdf') {
-    toast.error('Only PDF files are allowed');
-    return;
-  }
-
-  postInternship().then(() => {
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-  });
 };
 
 const resetForm = () => {
@@ -321,11 +332,7 @@ onMounted(() => {
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>Industries</SelectLabel>
-                <SelectItem
-                  v-for="industry in industries"
-                  :key="industry.id"
-                  :value="industry.id.toString()"
-                >
+                <SelectItem v-for="industry in industries" :key="industry.id" :value="industry.id.toString()">
                   {{ industry.name }}
                 </SelectItem>
               </SelectGroup>
@@ -345,12 +352,7 @@ onMounted(() => {
 
         <div class="grid gap-2">
           <Label for="cover_letter">Upload Cover Letter</Label>
-          <Input
-            id="cover_letter"
-            type="file"
-            @change="handleFileChange"
-            accept=".pdf"
-          />
+          <Input id="cover_letter" type="file" @change="handleFileChange" accept=".pdf" />
           <p class="text-sm text-gray-500">Format: .pdf, Max: 2MB</p>
         </div>
         <Button type="submit" class="bg-amber-400 hover:bg-amber-500">
@@ -363,9 +365,7 @@ onMounted(() => {
       <!-- Loading State -->
       <div v-if="isLoading" class="flex items-center justify-center h-64">
         <div class="flex flex-col items-center">
-          <div
-            class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400"
-          ></div>
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400"></div>
           <p class="mt-4 text-gray-600">Loading internship data...</p>
         </div>
       </div>
@@ -374,10 +374,7 @@ onMounted(() => {
       <div v-else-if="error" class="flex items-center justify-center h-64">
         <div class="text-center p-6 bg-red-50 rounded-lg border border-red-200">
           <p class="text-red-600 mb-4">{{ error }}</p>
-          <Button
-            @click="fetchInternships"
-            class="bg-amber-400 hover:bg-amber-500"
-          >
+          <Button @click="fetchInternships" class="bg-amber-400 hover:bg-amber-500">
             Try Again
           </Button>
         </div>
@@ -385,76 +382,50 @@ onMounted(() => {
 
       <div v-else class="grid grid-cols-1 md:grid-cols-4 gap-2 flex-grow">
         <!-- Progress Card -->
-        <Card
-          class="col-span-1 bg-white"
-          :class="isActive ? 'md:col-span-3' : 'md:col-span-4'"
-        >
+        <Card class="col-span-1 bg-white" :class="isActive ? 'md:col-span-3' : 'md:col-span-4'">
           <CardHeader>
             <div v-if="isActive" class="flex justify-between items-center">
               <div>
-                <CardTitle class="text-xl capitalize"
-                  >Internship Progress</CardTitle
-                >
+                <CardTitle class="text-xl capitalize">Internship Progress</CardTitle>
                 <CardDescription>Current status and completion</CardDescription>
               </div>
-              <Badge
-                class="px-3 py-1.5 text-sm font-medium"
-                :class="
-                  isActive
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                    : 'bg-gray-100 text-gray-800 border border-gray-200'
-                "
-              >
+              <Badge class="px-3 py-1.5 text-sm font-medium" :class="isActive
+                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                  : 'bg-gray-100 text-gray-800 border border-gray-200'
+                ">
                 {{ isActive ? 'Active' : 'Inactive' }}
               </Badge>
             </div>
           </CardHeader>
 
-          <CardContent
-            v-if="!isActive"
-            class="flex flex-1 justify-center items-center p-4 sm:p-8"
-          >
+          <CardContent v-if="!isActive" class="flex flex-1 justify-center items-center p-4 sm:p-8">
             <div class="w-full max-w-4xl mx-auto">
               <!-- Top Section: Mobile-First Layout -->
               <div class="relative mb-6 sm:mb-8">
-                <div
-                  class="flex flex-col items-center gap-4 sm:flex-row sm:justify-start sm:gap-6"
-                >
+                <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-start sm:gap-6">
                   <!-- Animated Icon Container -->
                   <div class="relative flex-shrink-0">
                     <div
-                      class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center shadow-lg"
-                    >
-                      <FileText
-                        class="w-10 h-10 sm:w-12 sm:h-12 text-amber-600 animate-pulse"
-                      />
+                      class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center shadow-lg">
+                      <FileText class="w-10 h-10 sm:w-12 sm:h-12 text-amber-600 animate-pulse" />
                     </div>
 
                     <!-- Floating particles effect -->
-                    <div
-                      class="absolute -top-2 -right-2 w-3 h-3 sm:w-4 sm:h-4 bg-amber-300 rounded-full animate-bounce"
-                      style="animation-delay: 0.2s"
-                    ></div>
+                    <div class="absolute -top-2 -right-2 w-3 h-3 sm:w-4 sm:h-4 bg-amber-300 rounded-full animate-bounce"
+                      style="animation-delay: 0.2s"></div>
                     <div
                       class="absolute -bottom-1 -left-3 w-2 h-2 sm:w-3 sm:h-3 bg-amber-400 rounded-full animate-bounce"
-                      style="animation-delay: 0.4s"
-                    ></div>
-                    <div
-                      class="absolute top-3 -left-2 w-2 h-2 bg-amber-500 rounded-full animate-bounce"
-                      style="animation-delay: 0.6s"
-                    ></div>
+                      style="animation-delay: 0.4s"></div>
+                    <div class="absolute top-3 -left-2 w-2 h-2 bg-amber-500 rounded-full animate-bounce"
+                      style="animation-delay: 0.6s"></div>
                   </div>
 
                   <!-- Title and Description -->
                   <div class="flex flex-col text-center sm:text-left flex-1">
-                    <h3
-                      class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3 leading-tight"
-                    >
+                    <h3 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 sm:mb-3 leading-tight">
                       Internship information not submitted yet
                     </h3>
-                    <p
-                      class="text-gray-600 text-sm sm:text-base leading-relaxed max-w-2xl"
-                    >
+                    <p class="text-gray-600 text-sm sm:text-base leading-relaxed max-w-2xl">
                       Start your internship journey! Register your internship
                       information to begin the monitoring process and get
                       teacher guidance.
@@ -464,73 +435,43 @@ onMounted(() => {
               </div>
 
               <!-- Main Content Section -->
-              <div
-                class="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2 lg:items-start"
-              >
+              <div class="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2 lg:items-start">
                 <!-- Left Column -->
                 <div class="space-y-4 sm:space-y-6 order-2 lg:order-1">
                   <div
-                    class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 sm:p-6 border border-amber-100"
-                  >
-                    <h4
-                      class="font-semibold text-gray-700 mb-3 sm:mb-4 text-sm sm:text-base flex items-center gap-2"
-                    >
-                      <ChevronRight
-                        class="w-4 h-4 sm:w-5 sm:h-5 text-amber-600"
-                      />
+                    class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 sm:p-6 border border-amber-100">
+                    <h4 class="font-semibold text-gray-700 mb-3 sm:mb-4 text-sm sm:text-base flex items-center gap-2">
+                      <ChevronRight class="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
                       Next step:
                     </h4>
                     <div class="space-y-2 sm:space-y-3">
                       <div
-                        class="flex items-center text-xs sm:text-sm text-gray-600 p-2 rounded-lg hover:bg-amber-100 transition-colors"
-                      >
-                        <div
-                          class="w-2 h-2 sm:w-3 sm:h-3 bg-amber-400 rounded-full mr-3 sm:mr-4 flex-shrink-0"
-                        ></div>
-                        <span class="font-medium"
-                          >Register your internship information</span
-                        >
+                        class="flex items-center text-xs sm:text-sm text-gray-600 p-2 rounded-lg hover:bg-amber-100 transition-colors">
+                        <div class="w-2 h-2 sm:w-3 sm:h-3 bg-amber-400 rounded-full mr-3 sm:mr-4 flex-shrink-0"></div>
+                        <span class="font-medium">Register your internship information</span>
                       </div>
                       <div
-                        class="flex items-center text-xs sm:text-sm text-gray-600 p-2 rounded-lg hover:bg-amber-100 transition-colors"
-                      >
-                        <div
-                          class="w-2 h-2 sm:w-3 sm:h-3 bg-amber-300 rounded-full mr-3 sm:mr-4 flex-shrink-0"
-                        ></div>
-                        <span class="font-medium"
-                          >Get a teacher to guide you</span
-                        >
+                        class="flex items-center text-xs sm:text-sm text-gray-600 p-2 rounded-lg hover:bg-amber-100 transition-colors">
+                        <div class="w-2 h-2 sm:w-3 sm:h-3 bg-amber-300 rounded-full mr-3 sm:mr-4 flex-shrink-0"></div>
+                        <span class="font-medium">Get a teacher to guide you</span>
                       </div>
                       <div
-                        class="flex items-center text-xs sm:text-sm text-gray-600 p-2 rounded-lg hover:bg-amber-100 transition-colors"
-                      >
-                        <div
-                          class="w-2 h-2 sm:w-3 sm:h-3 bg-amber-200 rounded-full mr-3 sm:mr-4 flex-shrink-0"
-                        ></div>
-                        <span class="font-medium"
-                          >Start the monitoring process</span
-                        >
+                        class="flex items-center text-xs sm:text-sm text-gray-600 p-2 rounded-lg hover:bg-amber-100 transition-colors">
+                        <div class="w-2 h-2 sm:w-3 sm:h-3 bg-amber-200 rounded-full mr-3 sm:mr-4 flex-shrink-0"></div>
+                        <span class="font-medium">Start the monitoring process</span>
                       </div>
                     </div>
                   </div>
 
                   <!-- Help -->
-                  <div
-                    class="p-3 sm:p-4 bg-blue-50 rounded-xl border border-blue-100"
-                  >
+                  <div class="p-3 sm:p-4 bg-blue-50 rounded-xl border border-blue-100">
                     <div class="flex items-start gap-2 sm:gap-3">
-                      <Info
-                        class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0 mt-0.5"
-                      />
+                      <Info class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                       <div class="text-left">
-                        <p
-                          class="text-xs sm:text-sm text-blue-700 font-semibold mb-1"
-                        >
+                        <p class="text-xs sm:text-sm text-blue-700 font-semibold mb-1">
                           Need help?
                         </p>
-                        <p
-                          class="text-xs sm:text-sm text-blue-600 leading-relaxed"
-                        >
+                        <p class="text-xs sm:text-sm text-blue-600 leading-relaxed">
                           Contact admin or your teacher.
                         </p>
                       </div>
@@ -539,18 +480,13 @@ onMounted(() => {
                 </div>
 
                 <!-- Right Column -->
-                <div
-                  class="flex flex-col justify-center items-center md:space-y-3 space-y-4 order-1 lg:order-2 h-full"
-                >
+                <div class="flex flex-col justify-center items-center md:space-y-3 space-y-4 order-1 lg:order-2 h-full">
                   <!-- Desktop Dialog -->
                   <Dialog v-if="isDesktop" v-model:open="isOpen">
                     <DialogTrigger as-child>
                       <Button
-                        class="relative bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 font-semibold py-3 sm:py-4 px-8 sm:px-10 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 border-0 text-sm sm:text-base w-full sm:w-auto"
-                      >
-                        <span
-                          class="flex items-center justify-center gap-2 sm:gap-3"
-                        >
+                        class="relative bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 font-semibold py-3 sm:py-4 px-8 sm:px-10 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 border-0 text-sm sm:text-base w-full sm:w-auto">
+                        <span class="flex items-center justify-center gap-2 sm:gap-3">
                           <Plus class="w-4 h-4 sm:w-5 sm:h-5" />
                           Register Internship
                         </span>
@@ -558,9 +494,7 @@ onMounted(() => {
                     </DialogTrigger>
                     <DialogContent class="sm:max-w-[425px]">
                       <DialogHeader>
-                        <DialogTitle class="text-xl"
-                          >Internship Registration</DialogTitle
-                        >
+                        <DialogTitle class="text-xl">Internship Registration</DialogTitle>
                         <DialogDescription>
                           Fill in the internship monitoring form
                         </DialogDescription>
@@ -573,8 +507,7 @@ onMounted(() => {
                   <Drawer v-else v-model:open="isOpen">
                     <DrawerTrigger as-child>
                       <Button
-                        class="relative bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform active:scale-95 transition-all duration-200 border-0 w-full text-base"
-                      >
+                        class="relative bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform active:scale-95 transition-all duration-200 border-0 w-full text-base">
                         <span class="flex items-center justify-center gap-3">
                           <Plus class="w-5 h-5" />
                           Register Internship
@@ -583,9 +516,7 @@ onMounted(() => {
                     </DrawerTrigger>
                     <DrawerContent>
                       <DrawerHeader class="text-left">
-                        <DrawerTitle class="text-xl"
-                          >Internship Registration</DrawerTitle
-                        >
+                        <DrawerTitle class="text-xl">Internship Registration</DrawerTitle>
                         <DrawerDescription>
                           Fill in the internship monitoring form
                         </DrawerDescription>
@@ -593,18 +524,14 @@ onMounted(() => {
                       <GridForm />
                       <DrawerFooter class="pt-2">
                         <DrawerClose as-child>
-                          <Button variant="outline" @click="resetForm"
-                            >Cancel</Button
-                          >
+                          <Button variant="outline" @click="resetForm">Cancel</Button>
                         </DrawerClose>
                       </DrawerFooter>
                     </DrawerContent>
                   </Drawer>
 
                   <!-- Aditional Info -->
-                  <div
-                    class="text-center text-xs sm:text-sm text-gray-500 mt-2 sm:mt-4 px-2"
-                  >
+                  <div class="text-center text-xs sm:text-sm text-gray-500 mt-2 sm:mt-4 px-2">
                     <p class="mb-1 lowercase">
                       Register to unlock progress tracking and teacher guidance
                     </p>
@@ -618,43 +545,32 @@ onMounted(() => {
           </CardContent>
 
           <!-- Active Internship Card -->
-          <CardContent
-            v-if="isActive"
-            class="space-y-4 flex-1 flex flex-col justify-center"
-          >
+          <CardContent v-if="isActive" class="space-y-4 flex-1 flex flex-col justify-center">
             <div class="flex justify-between items-center mb-2">
               <span class="text-sm font-medium text-gray-500">Progress</span>
-              <span class="text-sm font-medium"
-                >{{ progressPercentage }}% completed</span
-              >
+              <span class="text-sm font-medium">{{ progressPercentage }}% completed</span>
             </div>
 
             <div class="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                class="bg-amber-400 h-2.5 rounded-full"
-                :style="{
-                  width: `${progressPercentage}%`,
-                }"
-              ></div>
+              <div class="bg-amber-400 h-2.5 rounded-full" :style="{
+                width: `${progressPercentage}%`,
+              }"></div>
             </div>
 
-            <div
-              v-if="
-                internship && (internship.start_date || internship.end_date)
-              "
-              class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"
-            >
+            <div v-if="
+              internship && (internship.start_date || internship.end_date)
+            " class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
               <div class="flex flex-col">
                 <span class="text-xs text-gray-500">Start Date</span>
                 <span class="font-medium">{{
                   internship.start_date || '-'
-                }}</span>
+                  }}</span>
               </div>
               <div class="flex flex-col">
                 <span class="text-xs text-gray-500">End Date</span>
                 <span class="font-medium">{{
                   internship.end_date || '-'
-                }}</span>
+                  }}</span>
               </div>
               <div class="flex flex-col">
                 <span class="text-xs text-gray-500">Duration</span>
@@ -664,23 +580,13 @@ onMounted(() => {
                 <span class="text-xs text-gray-500">Teacher</span>
                 <span class="font-medium">{{
                   internship.teacher?.user?.name || 'Not assigned'
-                }}</span>
+                  }}</span>
               </div>
             </div>
           </CardContent>
-          <CardFooter
-            v-if="isActive"
-            class="flex justify-between border-t pt-4"
-          >
-            <span class="text-xs text-gray-500"
-              >Last updated: {{ new Date().toLocaleDateString() }}</span
-            >
-            <Button
-              variant="ghost"
-              size="sm"
-              class="text-amber-600 hover:text-amber-700"
-              disabled
-            >
+          <CardFooter v-if="isActive" class="flex justify-between border-t pt-4">
+            <span class="text-xs text-gray-500">Last updated: {{ new Date().toLocaleDateString() }}</span>
+            <Button variant="ghost" size="sm" class="text-amber-600 hover:text-amber-700" disabled>
               View Details
             </Button>
           </CardFooter>
@@ -698,13 +604,13 @@ onMounted(() => {
                 <span class="text-sm mb-1">Name:</span>
                 <span class="text-gray-600">{{
                   internship.industry?.name || '-'
-                }}</span>
+                  }}</span>
               </div>
               <div class="flex flex-col">
                 <span class="text-sm mb-1">Business Field:</span>
                 <badge class="bg-amber-500">{{
                   internship.industry?.business_field?.name || '-'
-                }}</badge>
+                  }}</badge>
               </div>
               <div class="flex flex-col">
                 <span class="text-sm mb-1">Address:</span>
@@ -716,20 +622,15 @@ onMounted(() => {
                 <span class="text-sm mb-1">Contact Information:</span>
                 <span class="text-gray-600">{{
                   internship.industry.phone || '-'
-                }}</span>
+                  }}</span>
                 <span class="text-gray-600">{{
                   internship.industry.email || '-'
-                }}</span>
+                  }}</span>
               </div>
             </div>
           </CardContent>
           <CardFooter class="border-t justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              class="text-amber-600 hover:text-amber-700"
-              disabled
-            >
+            <Button variant="ghost" size="sm" class="text-amber-600 hover:text-amber-700" disabled>
               View Details
             </Button>
           </CardFooter>
@@ -740,14 +641,10 @@ onMounted(() => {
           <CardHeader>
             <div class="flex justify-between items-center">
               <div>
-                <CardTitle class="font-semibold text-xl"
-                  >Student Details</CardTitle
-                >
+                <CardTitle class="font-semibold text-xl">Student Details</CardTitle>
                 <CardDescription>Student Information</CardDescription>
               </div>
-              <Badge
-                class="px-3 py-1.5 text-sm font-medium bg-amber-100 text-amber-800 border border-amber-200"
-              >
+              <Badge class="px-3 py-1.5 text-sm font-medium bg-amber-100 text-amber-800 border border-amber-200">
                 Student
               </Badge>
             </div>
@@ -755,8 +652,7 @@ onMounted(() => {
           <CardContent class="p-4 flex-1" v-if="internship">
             <div class="grid gap-4">
               <div
-                class="border border-amber-100 rounded-xl p-4 bg-white hover:bg-amber-100 transition-colors shadow-sm hover:shadow"
-              >
+                class="border border-amber-100 rounded-xl p-4 bg-white hover:bg-amber-100 transition-colors shadow-sm hover:shadow">
                 <div class="flex items-start mb-4">
                   <h3 class="font-semibold text-lg text-gray-800">
                     {{ internship.student?.user?.name || 'Unknown' }}
@@ -766,42 +662,34 @@ onMounted(() => {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                   <div class="flex items-center">
                     <span class="text-gray-500 text-sm w-16">NIS:</span>
-                    <span
-                      class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
-                    >
+                    <span class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1">
                       {{ internship.student?.nis || '-' }}
                     </span>
                   </div>
 
                   <div class="flex items-center">
                     <span class="text-gray-500 text-sm w-16">Email:</span>
-                    <span
-                      class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1 truncate"
-                    >
+                    <span class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1 truncate">
                       {{ internship.student?.user?.email || '-' }}
                     </span>
                   </div>
 
                   <div class="flex items-center">
                     <span class="text-gray-500 text-sm w-16">Phone:</span>
-                    <span
-                      class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
-                    >
+                    <span class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1">
                       {{ internship.student?.user?.phone || '-' }}
                     </span>
                   </div>
 
                   <div class="flex items-center">
                     <span class="text-gray-500 text-sm w-16">Gender:</span>
-                    <span
-                      class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
-                    >
+                    <span class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1">
                       {{
                         internship.student?.user?.gender === 'L'
                           ? 'Male'
                           : internship.student?.user?.gender === 'P'
-                          ? 'Female'
-                          : '-'
+                            ? 'Female'
+                            : '-'
                       }}
                     </span>
                   </div>
@@ -810,12 +698,7 @@ onMounted(() => {
             </div>
           </CardContent>
           <CardFooter class="border-t justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              class="text-amber-600 hover:text-amber-700"
-              disabled
-            >
+            <Button variant="ghost" size="sm" class="text-amber-600 hover:text-amber-700" disabled>
               View Details
             </Button>
           </CardFooter>
@@ -826,14 +709,10 @@ onMounted(() => {
           <CardHeader>
             <div class="flex justify-between items-center">
               <div>
-                <CardTitle class="font-semibold text-xl"
-                  >Teacher Details</CardTitle
-                >
+                <CardTitle class="font-semibold text-xl">Teacher Details</CardTitle>
                 <CardDescription>Teacher Information</CardDescription>
               </div>
-              <Badge
-                class="px-3 py-1.5 text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
-              >
+              <Badge class="px-3 py-1.5 text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200">
                 Teacher
               </Badge>
             </div>
@@ -841,8 +720,7 @@ onMounted(() => {
           <CardContent class="p-4 flex-1" v-if="internship">
             <div class="grid gap-4">
               <div
-                class="border border-blue-100 rounded-xl p-4 bg-white hover:bg-blue-100 transition-colors shadow-sm hover:shadow"
-              >
+                class="border border-blue-100 rounded-xl p-4 bg-white hover:bg-blue-100 transition-colors shadow-sm hover:shadow">
                 <div class="flex items-start mb-4">
                   <h3 class="font-semibold text-lg text-gray-800">
                     {{ internship.teacher?.user?.name || 'Unknown' }}
@@ -852,42 +730,34 @@ onMounted(() => {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                   <div class="flex items-center">
                     <span class="text-gray-500 text-sm w-16">NIP:</span>
-                    <span
-                      class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
-                    >
+                    <span class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1">
                       {{ internship.teacher?.nip || '-' }}
                     </span>
                   </div>
 
                   <div class="flex items-center">
                     <span class="text-gray-500 text-sm w-16">Email:</span>
-                    <span
-                      class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1 truncate"
-                    >
+                    <span class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1 truncate">
                       {{ internship.teacher?.user?.email || '-' }}
                     </span>
                   </div>
 
                   <div class="flex items-center">
                     <span class="text-gray-500 text-sm w-16">Phone:</span>
-                    <span
-                      class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
-                    >
+                    <span class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1">
                       {{ internship.teacher?.user?.phone || '-' }}
                     </span>
                   </div>
 
                   <div class="flex items-center">
                     <span class="text-gray-500 text-sm w-16">Gender:</span>
-                    <span
-                      class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1"
-                    >
+                    <span class="text-sm font-medium bg-gray-50 px-3 py-1.5 rounded-md flex-1">
                       {{
                         internship.teacher?.user?.gender === 'L'
                           ? 'Male'
                           : internship.teacher?.user?.gender === 'P'
-                          ? 'Female'
-                          : '-'
+                            ? 'Female'
+                            : '-'
                       }}
                     </span>
                   </div>
@@ -896,12 +766,7 @@ onMounted(() => {
             </div>
           </CardContent>
           <CardFooter class="border-t justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              class="text-blue-600 hover:text-blue-700"
-              disabled
-            >
+            <Button variant="ghost" size="sm" class="text-blue-600 hover:text-blue-700" disabled>
               View Details
             </Button>
           </CardFooter>

@@ -121,6 +121,11 @@ const paginatedIndustries = computed(() => {
 const canPreviousPage = computed(() => currentPage.value > 1);
 const canNextPage = computed(() => currentPage.value < totalPages.value);
 
+const validatePhone = (phone) => {
+  const phoneRegex = /^(?:\+62)8[1-9][0-9]{7,10}$/;
+  return phoneRegex.test(phone.replace(/\s+/g, ''));
+};
+
 // API functions
 const fetchIndustries = async () => {
   try {
@@ -141,8 +146,13 @@ const fetchBusinessFields = async () => {
 };
 
 const createIndustry = async () => {
+  isLoading.value = true;
   try {
-    isLoading.value = true;
+    if (!validatePhone(formData.value.phone)) {
+      toast.error('please enter a valid phone number');
+      return;
+    }
+
     const data = {
       name: formData.value.industryName,
       business_field_id: formData.value.selectedBusinessField,
@@ -169,6 +179,8 @@ const createIndustry = async () => {
       toast.warning("Please fill in all fields");
       return;
     }
+
+
 
     await api.post("/industries", data);
 
